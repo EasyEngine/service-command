@@ -1,0 +1,28 @@
+{
+    "name": "easyengine/service-command",
+    "description": "Shell to run helpful commands inside containers.",
+    "type": "ee-cli-package",
+    "homepage": "https://github.com/easyengine/service-command",
+    "license": "MIT",
+    "authors": [],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "": "src/"
+        },
+        "files": [ "service-command.php" ]
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.x-dev"
+        },
+        "bundled": true,
+        "commands": [
+            "service start",
+            "service stop",
+            "service restart",
+            "service reload"
+        ]
+    }
+}

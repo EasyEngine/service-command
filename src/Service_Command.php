@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Executes wp-cli command on a site.
+ * Manages global containers of EasyEngine.
  *
  * ## EXAMPLES
  *
- *     # Create simple WordPress site
- *     $ ee wp test.local plugin list
+ *     # Restarts global nginx proxy containers
+ *     $ ee service restart nginx-proxy
  *
  * @package ee-cli
  */
@@ -15,33 +15,80 @@ use EE\Utils;
 
 class Service_Command extends EE_Command {
 
-	private $global_container_name = 'ee-nginx-proxy';
+	private $whitelisted_containers = [
+		'ee-nginx-proxy'
+	];
+
 	/**
-	 * Starts global reverse proxy container.
+	 * Starts global containers.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <container-name>
+	 * : Name of container.
 	 */
-	public function start( $cmd, $descriptors = null ) {
-		\EE\Utils\default_launch( "docker start $this->global_container_name" );
+	public function start( $args, $assoc_args ) {
+		$container = $this->filter_container( $args );
+		\EE\Utils\default_launch( "docker start $container" );
 	}
 
 	/**
-	 * Stops global reverse proxy container.
+	 * Stops global containers.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <container-name>
+	 * : Name of container.
 	 */
-	public function stop( $cmd, $descriptors = null ) {
-		\EE\Utils\default_launch( "docker stop $this->global_container_name" );
+	public function stop( $args, $assoc_args ) {
+		$container = $this->filter_container( $args );
+		\EE\Utils\default_launch( "docker stop $container" );
 	}
 
 	/**
-	 * Restarts global reverse proxy container.
+	 * Restarts global containers.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <container-name>
+	 * : Name of container.
 	 */
-	public function restart( $cmd, $descriptors = null ) {
-		\EE\Utils\default_launch( "docker restart $this->global_container_name" );
+	public function restart( $args, $assoc_args ) {
+		$container = $this->filter_container( $args );
+		\EE\Utils\default_launch( "docker restart $container" );
 	}
 
 	/**
-	 * Reloads global reverse proxy service without .
+	 * Reloads global service without restarting containers.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <service-name>
+	 * : Name of container.
 	 */
-	public function reload( $cmd, $descriptors = null ) {
-		\EE\Utils\default_launch( "docker exec $this->global_container_name sh -c 'nginx -t && service nginx reload'" );
+	public function reload( $args, $assoc_args ) {
+		$container = $this->filter_container( $args );
+		$command = $this->container_reload_command( $container );
+		\EE\Utils\default_launch( "docker exec $container $command" );
 	}
 
+	/**
+	 * Returns valid container name from arguments.
+	 */
+	private function filter_container( $args ) {
+		$containers = array_intersect( $this->whitelisted_containers, $args );
+
+		if( empty( $containers ) ) {
+			EE::error( "Unable to find global EasyEngine container $args[0]" );
+		}
+
+		return $containers[0];
+	}
+
+	private function container_reload_command( $container ) {
+		$command_map = [
+			'ee-nginx-proxy' => "sh -c 'nginx -t && service nginx reload'"
+		];
+		return $command_map[ $container ];
+	}
 }

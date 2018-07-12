@@ -10,10 +10,12 @@ So let's say you have foo.com and bar.com on same ee server. When anyone request
 ## Usage:
 
 ```
-ee service start    # starts global container
-ee service restart    # restarts global container
-ee service stop    # stops global container
-ee service reload    # reloads global container
+ee service [start|stop|restart|reload] <service-name>
+
+ee service start ee-nginx-proxy   # starts ee-nginx-proxy container
+ee service restart ee-nginx-proxy   # restarts ee-nginx-proxy container
+ee service stop ee-nginx-proxy   # stops ee-nginx-proxy container
+ee service reload ee-nginx-proxy   # reloads the configuration of ee-nginx-proxy container
 ```
 
 For more info run ee service --help

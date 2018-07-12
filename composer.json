@@ -1,6 +1,6 @@
 {
     "name": "easyengine/service-command",
-    "description": "Shell to run helpful commands inside containers.",
+    "description": "Command to manager global containers/services in EasyEngine",
     "type": "ee-cli-package",
     "homepage": "https://github.com/easyengine/service-command",
     "license": "MIT",

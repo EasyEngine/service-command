@@ -1,5 +1,7 @@
 <?php
 
+use EE\Utils;
+
 /**
  * Manages global containers of EasyEngine.
  *
@@ -10,26 +12,49 @@
  *
  * @package ee-cli
  */
-
-use EE\Utils;
-
 class Service_Command extends EE_Command {
 
+	/**
+	 * @var array Array of containers defined in global docker-compose.yml
+	 */
 	private $whitelisted_containers = [
-		'ee-nginx-proxy'
+		'nginx-proxy',
 	];
+
+	/**
+	 * Service_Command constructor.
+	 *
+	 * Changes directory to EE_CONF_ROOT since that's where all docker-compose commands will be executed
+	 */
+	public function __construct() {
+		chdir( EE_CONF_ROOT );
+	}
 
 	/**
 	 * Starts global containers.
 	 *
 	 * ## OPTIONS
 	 *
-	 * <container-name>
+	 * <service-name>
 	 * : Name of container.
 	 */
 	public function start( $args, $assoc_args ) {
 		$container = $this->filter_container( $args );
-		\EE\Utils\default_launch( "docker start $container" );
+
+		EE::exec( "docker-compose start $container", true, true );
+	}
+
+	/**
+	 * Returns valid container name from arguments.
+	 */
+	private function filter_container( $args ) {
+		$containers = array_intersect( $this->whitelisted_containers, $args );
+
+		if ( empty( $containers ) ) {
+			EE::error( "Unable to find global EasyEngine container $args[0]" );
+		}
+
+		return $containers[0];
 	}
 
 	/**
@@ -37,12 +62,12 @@ class Service_Command extends EE_Command {
 	 *
 	 * ## OPTIONS
 	 *
-	 * <container-name>
+	 * <service-name>
 	 * : Name of container.
 	 */
 	public function stop( $args, $assoc_args ) {
 		$container = $this->filter_container( $args );
-		\EE\Utils\default_launch( "docker stop $container" );
+		EE::exec( "docker-compose stop $container", true, true );
 	}
 
 	/**
@@ -50,12 +75,12 @@ class Service_Command extends EE_Command {
 	 *
 	 * ## OPTIONS
 	 *
-	 * <container-name>
+	 * <service-name>
 	 * : Name of container.
 	 */
 	public function restart( $args, $assoc_args ) {
 		$container = $this->filter_container( $args );
-		\EE\Utils\default_launch( "docker restart $container" );
+		EE::exec( "docker-compose restart $container", true, true );
 	}
 
 	/**
@@ -68,27 +93,23 @@ class Service_Command extends EE_Command {
 	 */
 	public function reload( $args, $assoc_args ) {
 		$container = $this->filter_container( $args );
-		$command = $this->container_reload_command( $container );
-		\EE\Utils\default_launch( "docker exec $container $command" );
+		$command   = $this->container_reload_command( $container );
+		EE::exec( "docker-compose exec $container $command", true, true );
 	}
 
 	/**
-	 * Returns valid container name from arguments.
+	 * Returns reload command of a container.
+	 * This is necessary since command to reload each service can be different.
+	 *
+	 * @param $container name of conntainer
+	 *
+	 * @return mixed
 	 */
-	private function filter_container( $args ) {
-		$containers = array_intersect( $this->whitelisted_containers, $args );
-
-		if( empty( $containers ) ) {
-			EE::error( "Unable to find global EasyEngine container $args[0]" );
-		}
-
-		return $containers[0];
-	}
-
-	private function container_reload_command( $container ) {
+	private function container_reload_command( string $container ) {
 		$command_map = [
-			'ee-nginx-proxy' => "sh -c 'nginx -t && service nginx reload'"
+			'nginx-proxy' => "sh -c 'nginx -t && service nginx reload'",
 		];
+
 		return $command_map[ $container ];
 	}
 }

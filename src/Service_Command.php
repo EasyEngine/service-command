@@ -3,11 +3,11 @@
 use EE\Utils;
 
 /**
- * Manages global containers of EasyEngine.
+ * Manages global services of EasyEngine.
  *
  * ## EXAMPLES
  *
- *     # Restarts global nginx proxy containers
+ *     # Restarts global nginx proxy service
  *     $ ee service restart nginx-proxy
  *
  * @package ee-cli
@@ -15,9 +15,9 @@ use EE\Utils;
 class Service_Command extends EE_Command {
 
 	/**
-	 * @var array Array of containers defined in global docker-compose.yml
+	 * @var array Array of services defined in global docker-compose.yml
 	 */
-	private $whitelisted_containers = [
+	private $whitelisted_services = [
 		'nginx-proxy',
 	];
 
@@ -31,85 +31,85 @@ class Service_Command extends EE_Command {
 	}
 
 	/**
-	 * Starts global containers.
+	 * Starts global services.
 	 *
 	 * ## OPTIONS
 	 *
 	 * <service-name>
-	 * : Name of container.
+	 * : Name of service.
 	 */
 	public function start( $args, $assoc_args ) {
-		$container = $this->filter_container( $args );
+		$service = $this->filter_service( $args );
 
-		EE::exec( "docker-compose start $container", true, true );
+		EE::exec( "docker-compose start $service", true, true );
 	}
 
 	/**
-	 * Returns valid container name from arguments.
+	 * Returns valid service name from arguments.
 	 */
-	private function filter_container( $args ) {
-		$containers = array_intersect( $this->whitelisted_containers, $args );
+	private function filter_service( $args ) {
+		$services = array_intersect( $this->whitelisted_services, $args );
 
-		if ( empty( $containers ) ) {
-			EE::error( "Unable to find global EasyEngine container $args[0]" );
+		if ( empty( $services ) ) {
+			EE::error( "Unable to find global EasyEngine service $args[0]" );
 		}
 
-		return $containers[0];
+		return $services[0];
 	}
 
 	/**
-	 * Stops global containers.
+	 * Stops global services.
 	 *
 	 * ## OPTIONS
 	 *
 	 * <service-name>
-	 * : Name of container.
+	 * : Name of service.
 	 */
 	public function stop( $args, $assoc_args ) {
-		$container = $this->filter_container( $args );
-		EE::exec( "docker-compose stop $container", true, true );
+		$service = $this->filter_service( $args );
+		EE::exec( "docker-compose stop $service", true, true );
 	}
 
 	/**
-	 * Restarts global containers.
+	 * Restarts global services.
 	 *
 	 * ## OPTIONS
 	 *
 	 * <service-name>
-	 * : Name of container.
+	 * : Name of service.
 	 */
 	public function restart( $args, $assoc_args ) {
-		$container = $this->filter_container( $args );
-		EE::exec( "docker-compose restart $container", true, true );
+		$service = $this->filter_service( $args );
+		EE::exec( "docker-compose restart $service", true, true );
 	}
 
 	/**
-	 * Reloads global service without restarting containers.
+	 * Reloads global service without restarting services.
 	 *
 	 * ## OPTIONS
 	 *
 	 * <service-name>
-	 * : Name of container.
+	 * : Name of service.
 	 */
 	public function reload( $args, $assoc_args ) {
-		$container = $this->filter_container( $args );
-		$command   = $this->container_reload_command( $container );
-		EE::exec( "docker-compose exec $container $command", true, true );
+		$service = $this->filter_service( $args );
+		$command   = $this->service_reload_command( $service );
+		EE::exec( "docker-compose exec $service $command", true, true );
 	}
 
 	/**
-	 * Returns reload command of a container.
+	 * Returns reload command of a service.
 	 * This is necessary since command to reload each service can be different.
 	 *
-	 * @param $container name of conntainer
+	 * @param $service string name of service
 	 *
 	 * @return mixed
 	 */
-	private function container_reload_command( string $container ) {
+	private function service_reload_command( string $service ) {
 		$command_map = [
 			'nginx-proxy' => "sh -c 'nginx -t && service nginx reload'",
 		];
 
-		return $command_map[ $container ];
+		return $command_map[ $service ];
 	}
 }

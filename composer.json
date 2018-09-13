@@ -19,6 +19,7 @@
         },
         "bundled": true,
         "commands": [
+            "service",
             "service start",
             "service stop",
             "service restart",

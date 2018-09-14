@@ -1,7 +1,5 @@
 <?php
 
-use EE\Utils;
-
 /**
  * Manages global services of EasyEngine.
  *
@@ -37,8 +35,14 @@ class Service_Command extends EE_Command {
 	 *
 	 * <service-name>
 	 * : Name of service.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Enable global service
+	 *     $ ee service enable nginx-proxy
+	 *
 	 */
-	public function start( $args, $assoc_args ) {
+	public function enable( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
 
 		EE::exec( "docker-compose start $service", true, true );
@@ -64,8 +68,14 @@ class Service_Command extends EE_Command {
 	 *
 	 * <service-name>
 	 * : Name of service.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Disable global service
+	 *     $ ee service disable nginx-proxy
+	 *
 	 */
-	public function stop( $args, $assoc_args ) {
+	public function disable( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
 		EE::exec( "docker-compose stop $service", true, true );
 	}
@@ -77,6 +87,12 @@ class Service_Command extends EE_Command {
 	 *
 	 * <service-name>
 	 * : Name of service.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Restart global service
+	 *     $ ee service restart nginx-proxy
+	 *
 	 */
 	public function restart( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
@@ -90,6 +106,12 @@ class Service_Command extends EE_Command {
 	 *
 	 * <service-name>
 	 * : Name of service.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Reload global service
+	 *     $ ee service reload nginx-proxy
+	 *
 	 */
 	public function reload( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );

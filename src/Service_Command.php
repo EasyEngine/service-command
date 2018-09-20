@@ -151,21 +151,21 @@ class Service_Command extends EE_Command {
 					'container_name' => 'ee-global-elasticsearch',
 					'image'          => 'docker.elastic.co/elasticsearch/elasticsearch:6.4.0',
 					'environment'    => [
-						'bootstrap.memory_lock' => true,
-						'ES_JAVA_OPTS'          => '-Xms2G -Xmx4G',
+						'bootstrap.memory_lock=true',
+						'ES_JAVA_OPTS=-Xms2G -Xmx4G'
 					],
 					'ulimits'        => [
 						'memlock' => [
-							'sof'  => '-1',
-							'hard' => '-1',
+							'soft=-1',
+							'hard=-1'
 						],
 					],
 					'volumes'        => [
-						'/opt/easyengine/services/elasticsearch' => '/usr/share/elasticsearch/data',
+						EE_CONF_ROOT . 'services/elasticsearch:/usr/share/elasticsearch/data',
 					],
 
 					'networks' => [
-						'global' => 'network',
+						'global-network',
 					],
 				],
 				[
@@ -196,7 +196,7 @@ class Service_Command extends EE_Command {
 
 		];
 
-		$contents = EE\Utils\mustache_render( SITE_TEMPLATE_ROOT . '/global_docker_compose.yml.mustache', $data );
+		$contents = EE\Utils\mustache_render( SERVICE_TEMPLATE_ROOT . '/global_docker_compose.yml.mustache', $data );
 		$fs->dumpFile( EE_CONF_ROOT . '/docker-compose.yml', $contents );
 	}
 

@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'SERVICE_TEMPLATE_ROOT' ) ) {
+	define( 'SERVICE_TEMPLATE_ROOT', __DIR__ . '/templates' );
+}
+
 if ( ! class_exists( 'EE' ) ) {
 	return;
 }

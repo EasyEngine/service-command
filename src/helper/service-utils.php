@@ -31,15 +31,13 @@ function nginx_proxy_check() {
 			}
 
 			$EE_CONF_ROOT = EE_CONF_ROOT;
-			if ( ! EE::docker()::docker_network_exists( GLOBAL_BACKEND_NETWORK ) ) {
-				if ( ! EE::docker()::create_network( GLOBAL_BACKEND_NETWORK ) ) {
-					EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
-				}
+			if ( ! EE::docker()::docker_network_exists( GLOBAL_BACKEND_NETWORK ) &&
+				! EE::docker()::create_network( GLOBAL_BACKEND_NETWORK ) ) {
+				EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
 			}
-			if ( ! EE::docker()::docker_network_exists( GLOBAL_FRONTEND_NETWORK ) ) {
-				if ( ! EE::docker()::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
-					EE::error( 'Unable to create network ' . GLOBAL_FRONTEND_NETWORK );
-				}
+			if ( ! EE::docker()::docker_network_exists( GLOBAL_FRONTEND_NETWORK ) &&
+				! EE::docker()::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
+				EE::error( 'Unable to create network ' . GLOBAL_FRONTEND_NETWORK );
 			}
 			if ( EE::docker()::docker_compose_up( EE_CONF_ROOT, [ 'global-nginx-proxy' ] ) ) {
 				$fs->dumpFile( "$EE_CONF_ROOT/nginx/conf.d/custom.conf", file_get_contents( EE_ROOT . '/templates/custom.conf.mustache' ) );
@@ -61,10 +59,9 @@ function init_global_container( $service, $container = '' ) {
 	if ( empty( $container ) ) {
 		$container = 'ee-' . $service;
 	}
-	if ( ! EE::docker()::docker_network_exists( GLOBAL_BACKEND_NETWORK ) ) {
-		if ( ! EE::docker()::create_network( GLOBAL_BACKEND_NETWORK ) ) {
-			EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
-		}
+	if ( ! EE::docker()::docker_network_exists( GLOBAL_BACKEND_NETWORK ) &&
+		! EE::docker()::create_network( GLOBAL_BACKEND_NETWORK ) ) {
+		EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
 	}
 
 	$fs = new Filesystem();

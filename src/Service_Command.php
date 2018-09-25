@@ -1,6 +1,7 @@
 <?php
 
 use Symfony\Component\Filesystem\Filesystem;
+
 /**
  * Manages global services of EasyEngine.
  *
@@ -19,8 +20,6 @@ class Service_Command extends EE_Command {
 	private $whitelisted_services = [
 		'nginx-proxy',
 		'mariadb',
-		'elasticsearch',
-		'memcached',
 		'redis',
 	];
 
@@ -48,24 +47,14 @@ class Service_Command extends EE_Command {
 	 *
 	 */
 	public function enable( $args, $assoc_args ) {
-		$service   = $this->filter_service( $args );
-		$container = "ee-global-$service";
+		$service      = $this->filter_service( $args );
+		$service_name = "global-$service";
+		$container    = "ee-$service_name";
 
 		if ( EE_PROXY_TYPE === $container ) {
 			\EE\Service\Utils\nginx_proxy_check();
 		} else {
-			$status = EE::docker()::container_status( $container );
-			if ( 'running' !== $status ) {
-
-				$fs = new Filesystem();
-
-				if ( ! $fs->exists( EE_CONF_ROOT . '/docker-compose.yml' ) ) {
-					\EE\Service\Utils\generate_global_docker_compose_yml( $fs );
-				}
-				chdir( EE_CONF_ROOT );
-				EE::docker()::boot_container( $container, "docker-compose up -d $service" );
-
-			}
+			\EE\Service\Utils\init_global_container( $service_name );
 		}
 
 	}
@@ -81,6 +70,7 @@ class Service_Command extends EE_Command {
 		}
 
 		$services = array_values( $services );
+
 		return $services[0];
 	}
 
@@ -138,7 +128,7 @@ class Service_Command extends EE_Command {
 	 */
 	public function reload( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
-		$command   = $this->service_reload_command( $service );
+		$command = $this->service_reload_command( $service );
 		EE::exec( "docker-compose exec $service $command", true, true );
 	}
 

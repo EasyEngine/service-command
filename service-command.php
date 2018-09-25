@@ -4,6 +4,30 @@ if ( ! defined( 'SERVICE_TEMPLATE_ROOT' ) ) {
 	define( 'SERVICE_TEMPLATE_ROOT', __DIR__ . '/templates' );
 }
 
+if ( ! defined( 'GLOBAL_DB' ) ) {
+	define( 'GLOBAL_DB', 'global-db' );
+}
+
+if ( ! defined( 'GLOBAL_DB_CONTAINER' ) ) {
+	define( 'GLOBAL_DB_CONTAINER', 'ee-global-db' );
+}
+
+if ( ! defined( 'GLOBAL_FRONTEND_NETWORK' ) ) {
+	define( 'GLOBAL_FRONTEND_NETWORK', 'ee-global-frontend-network' );
+}
+
+if ( ! defined( 'GLOBAL_BACKEND_NETWORK' ) ) {
+	define( 'GLOBAL_BACKEND_NETWORK', 'ee-global-backend-network' );
+}
+
+if ( ! defined( 'GLOBAL_REDIS' ) ) {
+	define( 'GLOBAL_REDIS', 'global-redis' );
+}
+
+if ( ! defined( 'GLOBAL_REDIS_CONTAINER' ) ) {
+	define( 'GLOBAL_REDIS_CONTAINER', 'ee-global-redis' );
+}
+
 if ( ! class_exists( 'EE' ) ) {
 	return;
 }

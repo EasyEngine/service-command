@@ -138,28 +138,6 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 					'global-backend-network',
 				],
 			],
-			[
-				'name'           => 'elasticsearch',
-				'container_name' => 'ee-global-elasticsearch',
-				'image'          => 'docker.elastic.co/elasticsearch/elasticsearch:6.4.0',
-				'environment'    => [
-					'bootstrap.memory_lock=true',
-					'ES_JAVA_OPTS=-Xms2G -Xmx4G',
-				],
-				'ulimits'        => [
-					'memlock' => [
-						'soft=-1',
-						'hard=-1',
-					],
-				],
-				'volumes'        => [
-					EE_CONF_ROOT . 'services/elasticsearch:/usr/share/elasticsearch/data',
-				],
-
-				'networks' => [
-					'global-backend-network',
-				],
-			],
 		],
 	];
 

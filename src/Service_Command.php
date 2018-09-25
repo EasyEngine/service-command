@@ -129,7 +129,11 @@ class Service_Command extends EE_Command {
 	public function reload( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
 		$command = $this->service_reload_command( $service );
-		EE::exec( "docker-compose exec $service $command", true, true );
+		if ( $command ) {
+			EE::exec( "docker-compose exec $service $command", true, true );
+		} else {
+			EE::warning( "$service can not be reloaded." );
+		}
 	}
 
 	/**
@@ -145,6 +149,6 @@ class Service_Command extends EE_Command {
 			'nginx-proxy' => "sh -c 'nginx -t && service nginx reload'",
 		];
 
-		return $command_map[ $service ];
+		return array_key_exists( $service, $command_map ) ? $command_map[ $service ] : false;
 	}
 }

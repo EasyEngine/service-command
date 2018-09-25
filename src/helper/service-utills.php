@@ -24,18 +24,18 @@ function nginx_proxy_check() {
 
 			$fs = new Filesystem();
 
-			if ( ! $fs->exists( EE_CONF_ROOT . '/docker-compose.yml' ) ) {
+			if ( ! $fs->exists( EE_ROOT_DIR . '/docker-compose.yml' ) ) {
 				self::generate_global_docker_compose_yml( $fs );
 			}
 
-			$EE_CONF_ROOT = EE_CONF_ROOT;
+			$EE_ROOT_DIR = EE_ROOT_DIR;
 			if ( ! EE::docker()::docker_network_exists( 'ee-global-network' ) ) {
 				if ( ! EE::docker()::create_network( 'ee-global-network' ) ) {
 					EE::error( 'Unable to create network ee-global-network' );
 				}
 			}
-			if ( EE::docker()::docker_compose_up( EE_CONF_ROOT, [ 'nginx-proxy' ] ) ) {
-				$fs->dumpFile( "$EE_CONF_ROOT/nginx/conf.d/custom.conf", file_get_contents( EE_ROOT . '/templates/custom.conf.mustache' ) );
+			if ( EE::docker()::docker_compose_up( EE_ROOT_DIR, [ 'nginx-proxy' ] ) ) {
+				$fs->dumpFile( "$EE_ROOT_DIR/services/nginx-proxy/conf.d/custom.conf", file_get_contents( EE_ROOT . '/templates/custom.conf.mustache' ) );
 				EE::success( "$proxy_type container is up." );
 			} else {
 				EE::error( "There was some error in starting $proxy_type container. Please check logs." );
@@ -45,7 +45,7 @@ function nginx_proxy_check() {
 }
 
 /**
- * Generates global docker-compose.yml at EE_CONF_ROOT
+ * Generates global docker-compose.yml at EE_ROOT_DIR
  *
  * @param Filesystem $fs Filesystem object to write file
  */
@@ -68,12 +68,12 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 					'LOCAL_GROUP_ID=' . posix_getegid(),
 				],
 				'volumes'        => [
-					EE_CONF_ROOT . '/nginx/certs:/etc/nginx/certs',
-					EE_CONF_ROOT . '/nginx/dhparam:/etc/nginx/dhparam',
-					EE_CONF_ROOT . '/nginx/conf.d:/etc/nginx/conf.d',
-					EE_CONF_ROOT . '/nginx/htpasswd:/etc/nginx/htpasswd',
-					EE_CONF_ROOT . '/nginx/vhost.d:/etc/nginx/vhost.d',
-					EE_CONF_ROOT . '/nginx/html:/usr/share/nginx/html',
+					EE_ROOT_DIR . '/services/nginx-proxy/certs:/etc/nginx/certs',
+					EE_ROOT_DIR . '/services/nginx-proxy/dhparam:/etc/nginx/dhparam',
+					EE_ROOT_DIR . '/services/nginx-proxy/conf.d:/etc/nginx/conf.d',
+					EE_ROOT_DIR . '/services/nginx-proxy/htpasswd:/etc/nginx/htpasswd',
+					EE_ROOT_DIR . '/services/nginx-proxy/vhost.d:/etc/nginx/vhost.d',
+					EE_ROOT_DIR . '/services/nginx-proxy/html:/usr/share/nginx/html',
 					'/var/run/docker.sock:/tmp/docker.sock:ro',
 				],
 				'networks'       => [
@@ -87,16 +87,16 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'image'          => 'docker.elastic.co/elasticsearch/elasticsearch:6.4.0',
 				'environment'    => [
 					'bootstrap.memory_lock=true',
-					'ES_JAVA_OPTS=-Xms2G -Xmx4G'
+					'ES_JAVA_OPTS=-Xms2G -Xmx4G',
 				],
 				'ulimits'        => [
 					'memlock' => [
 						'soft=-1',
-						'hard=-1'
+						'hard=-1',
 					],
 				],
 				'volumes'        => [
-					EE_CONF_ROOT . 'services/elasticsearch:/usr/share/elasticsearch/data',
+					EE_ROOT_DIR . 'services/elasticsearch:/usr/share/elasticsearch/data',
 				],
 
 				'networks' => [
@@ -116,21 +116,10 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 					'global-network',
 				],
 			],
-			[
-				'name'           => 'memcached',
-				'container_name' => 'ee-global-memcached',
-				'image'          => 'easyengine/nginx-proxy:v4.0.0-beta.6',
-
-			],
-			[
-				'name'           => 'redis',
-				'container_name' => 'ee-global-redis',
-				'image'          => 'easyengine/nginx-proxy:v4.0.0-beta.6',
-			],
 		],
 
 	];
 
 	$contents = EE\Utils\mustache_render( SERVICE_TEMPLATE_ROOT . '/global_docker_compose.yml.mustache', $data );
-	$fs->dumpFile( EE_CONF_ROOT . '/docker-compose.yml', $contents );
+	$fs->dumpFile( EE_ROOT_DIR . '/docker-compose.yml', $contents );
 }

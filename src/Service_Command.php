@@ -51,7 +51,7 @@ class Service_Command extends EE_Command {
 		$service   = $this->filter_service( $args );
 		$container = "ee-global-$service";
 
-		if ( 'ee-global-nginx-proxy' === $container ) {
+		if ( EE_PROXY_TYPE === $container ) {
 			\EE\Service\Utils\nginx_proxy_check();
 		} else {
 			$status = EE::docker()::container_status( $container );

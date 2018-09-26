@@ -16,8 +16,8 @@ function nginx_proxy_check() {
 		/**
 		 * Checking ports.
 		 */
-		$port_80_status  = get_curl_info( 'localhost', 80, true );
-		$port_443_status = get_curl_info( 'localhost', 443, true );
+		$port_80_status  = \EE\Utils\get_curl_info( 'localhost', 80, true );
+		$port_443_status = \EE\Utils\get_curl_info( 'localhost', 443, true );
 
 		// if any/both the port/s is/are occupied.
 		if ( ! ( $port_80_status && $port_443_status ) ) {

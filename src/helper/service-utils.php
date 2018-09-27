@@ -71,7 +71,6 @@ function init_global_container( $service, $container = '' ) {
 	}
 
 	if ( 'running' !== EE::docker()::container_status( $container ) ) {
-		chdir( EE_ROOT_DIR . '/services' );
 		EE::docker()::boot_container( $container, 'docker-compose up -d ' . $service );
 	}
 }

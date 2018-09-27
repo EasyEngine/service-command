@@ -26,11 +26,11 @@ function nginx_proxy_check() {
 
 			$fs = new Filesystem();
 
-			if ( ! $fs->exists( EE_CONF_ROOT . '/docker-compose.yml' ) ) {
+			if ( ! $fs->exists( EE_ROOT_DIR . '/services/docker-compose.yml' ) ) {
 				generate_global_docker_compose_yml( $fs );
 			}
 
-			$EE_CONF_ROOT = EE_CONF_ROOT;
+			$EE_ROOT_DIR = EE_ROOT_DIR;
 			if ( ! EE::docker()::docker_network_exists( GLOBAL_BACKEND_NETWORK ) &&
 				! EE::docker()::create_network( GLOBAL_BACKEND_NETWORK ) ) {
 				EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
@@ -39,8 +39,8 @@ function nginx_proxy_check() {
 				! EE::docker()::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
 				EE::error( 'Unable to create network ' . GLOBAL_FRONTEND_NETWORK );
 			}
-			if ( EE::docker()::docker_compose_up( EE_CONF_ROOT, [ 'global-nginx-proxy' ] ) ) {
-				$fs->dumpFile( "$EE_CONF_ROOT/nginx/conf.d/custom.conf", file_get_contents( EE_ROOT . '/templates/custom.conf.mustache' ) );
+			if ( EE::docker()::docker_compose_up( EE_ROOT_DIR . '/services', [ 'global-nginx-proxy' ] ) ) {
+				$fs->dumpFile( "$EE_ROOT_DIR/services/nginx-proxy/conf.d/custom.conf", file_get_contents( EE_ROOT . '/templates/custom.conf.mustache' ) );
 				EE::success( "$proxy_type container is up." );
 			} else {
 				EE::error( "There was some error in starting $proxy_type container. Please check logs." );
@@ -66,18 +66,18 @@ function init_global_container( $service, $container = '' ) {
 
 	$fs = new Filesystem();
 
-	if ( ! $fs->exists( EE_CONF_ROOT . '/docker-compose.yml' ) ) {
+	if ( ! $fs->exists( EE_ROOT_DIR . '/services/docker-compose.yml' ) ) {
 		generate_global_docker_compose_yml( $fs );
 	}
 
 	if ( 'running' !== EE::docker()::container_status( $container ) ) {
-		chdir( EE_CONF_ROOT );
+		chdir( EE_ROOT_DIR . '/services' );
 		EE::docker()::boot_container( $container, 'docker-compose up -d ' . $service );
 	}
 }
 
 /**
- * Generates global docker-compose.yml at EE_CONF_ROOT
+ * Generates global docker-compose.yml at EE_ROOT_DIR
  *
  * @param Filesystem $fs Filesystem object to write file
  */
@@ -100,12 +100,12 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 					'LOCAL_GROUP_ID=' . posix_getegid(),
 				],
 				'volumes'        => [
-					EE_CONF_ROOT . '/nginx/certs:/etc/nginx/certs',
-					EE_CONF_ROOT . '/nginx/dhparam:/etc/nginx/dhparam',
-					EE_CONF_ROOT . '/nginx/conf.d:/etc/nginx/conf.d',
-					EE_CONF_ROOT . '/nginx/htpasswd:/etc/nginx/htpasswd',
-					EE_CONF_ROOT . '/nginx/vhost.d:/etc/nginx/vhost.d',
-					EE_CONF_ROOT . '/nginx/html:/usr/share/nginx/html',
+					EE_ROOT_DIR . '/services/nginx-proxy/certs:/etc/nginx/certs',
+					EE_ROOT_DIR . '/services/nginx-proxy/dhparam:/etc/nginx/dhparam',
+					EE_ROOT_DIR . '/services/nginx-proxy/conf.d:/etc/nginx/conf.d',
+					EE_ROOT_DIR . '/services/nginx-proxy/htpasswd:/etc/nginx/htpasswd',
+					EE_ROOT_DIR . '/services/nginx-proxy/vhost.d:/etc/nginx/vhost.d',
+					EE_ROOT_DIR . '/services/nginx-proxy/html:/usr/share/nginx/html',
 					'/var/run/docker.sock:/tmp/docker.sock:ro',
 				],
 				'networks'       => [
@@ -130,7 +130,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'container_name' => GLOBAL_REDIS_CONTAINER,
 				'image'          => 'easyengine/redis:' . $img_versions['easyengine/redis'],
 				'restart'        => 'always',
-				'volumes'        => [ EE_CONF_ROOT . '/services/redis:/data' ],
+				'volumes'        => [ EE_ROOT_DIR . '/services/redis:/data' ],
 				'networks'       => [
 					'global-backend-network',
 				],
@@ -139,5 +139,5 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 	];
 
 	$contents = EE\Utils\mustache_render( SERVICE_TEMPLATE_ROOT . '/global_docker_compose.yml.mustache', $data );
-	$fs->dumpFile( EE_CONF_ROOT . '/docker-compose.yml', $contents );
+	$fs->dumpFile( EE_ROOT_DIR . '/services/docker-compose.yml', $contents );
 }

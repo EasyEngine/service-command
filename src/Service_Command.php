@@ -19,7 +19,7 @@ class Service_Command extends EE_Command {
 	 */
 	private $whitelisted_services = [
 		'nginx-proxy',
-		'mariadb',
+		'db',
 		'redis',
 	];
 
@@ -29,7 +29,13 @@ class Service_Command extends EE_Command {
 	 * Changes directory to EE_ROOT_DIR since that's where all docker-compose commands will be executed
 	 */
 	public function __construct() {
-		chdir( EE_ROOT_DIR . '/services' );
+
+		$services_path = EE_ROOT_DIR . '/services';
+		if ( ! is_dir( $services_path ) ) {
+			mkdir( $services_path );
+		}
+		chdir( $services_path );
+
 	}
 
 	/**

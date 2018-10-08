@@ -47,14 +47,13 @@ class Service_Command extends EE_Command {
 	 *
 	 */
 	public function enable( $args, $assoc_args ) {
-		$service      = $this->filter_service( $args );
-		$service_name = "global-$service";
-		$container    = "ee-$service_name";
+		$service   = $this->filter_service( $args );
+		$container = "ee-$service";
 
 		if ( EE_PROXY_TYPE === $container ) {
 			\EE\Service\Utils\nginx_proxy_check();
 		} else {
-			\EE\Service\Utils\init_global_container( $service_name );
+			\EE\Service\Utils\init_global_container( $service );
 		}
 
 	}
@@ -71,7 +70,7 @@ class Service_Command extends EE_Command {
 
 		$services = array_values( $services );
 
-		return $services[0];
+		return 'global-' . $services[0];
 	}
 
 	/**
@@ -146,7 +145,7 @@ class Service_Command extends EE_Command {
 	 */
 	private function service_reload_command( string $service ) {
 		$command_map = [
-			'nginx-proxy' => "sh -c 'nginx -t && service nginx reload'",
+			'global-nginx-proxy' => "sh -c 'nginx -t && service nginx reload'",
 		];
 
 		return array_key_exists( $service, $command_map ) ? $command_map[ $service ] : false;

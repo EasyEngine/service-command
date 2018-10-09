@@ -63,6 +63,10 @@ function init_global_container( $service, $container = '' ) {
 		! EE::docker()::create_network( GLOBAL_BACKEND_NETWORK ) ) {
 		EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
 	}
+	if ( ! EE::docker()::docker_network_exists( GLOBAL_FRONTEND_NETWORK ) &&
+		! EE::docker()::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
+		EE::error( 'Unable to create network ' . GLOBAL_FRONTEND_NETWORK );
+	}
 
 	$fs = new Filesystem();
 
@@ -73,7 +77,13 @@ function init_global_container( $service, $container = '' ) {
 	if ( 'running' !== EE::docker()::container_status( $container ) ) {
 		chdir( EE_ROOT_DIR . '/services' );
 		EE::docker()::boot_container( $container, 'docker-compose up -d ' . $service );
+	} else {
+		EE::warning( "$service: Service already running" );
+		return;
 	}
+
+	EE::success( "$container container is up" );
+
 }
 
 /**

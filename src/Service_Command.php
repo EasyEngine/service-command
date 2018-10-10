@@ -151,7 +151,7 @@ class Service_Command extends EE_Command {
 	 */
 	private function service_reload_command( string $service ) {
 		$command_map = [
-			'global-nginx-proxy' => "sh -c 'nginx -t && service nginx reload'",
+			'global-nginx-proxy' => 'sh -c "/app/docker-entrypoint.sh /usr/local/bin/docker-gen /app/nginx.tmpl /etc/nginx/conf.d/default.conf; /usr/sbin/nginx -t; /usr/sbin/nginx -s reload"',
 		];
 
 		return array_key_exists( $service, $command_map ) ? $command_map[ $service ] : false;

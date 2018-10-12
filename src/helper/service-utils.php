@@ -116,6 +116,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 					EE_ROOT_DIR . '/services/nginx-proxy/htpasswd:/etc/nginx/htpasswd',
 					EE_ROOT_DIR . '/services/nginx-proxy/vhost.d:/etc/nginx/vhost.d',
 					EE_ROOT_DIR . '/services/nginx-proxy/html:/usr/share/nginx/html',
+					EE_ROOT_DIR . '/services/nginx-proxy/logs:/var/log/nginx',
 					'/var/run/docker.sock:/tmp/docker.sock:ro',
 				],
 				'networks'       => [
@@ -130,7 +131,11 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'environment'    => [
 					'MYSQL_ROOT_PASSWORD=' . \EE\Utils\random_password(),
 				],
-				'volumes'        => [ './app/db:/var/lib/mysql' ],
+				'volumes'        => [
+					EE_ROOT_DIR . '/services/mysql/mariadb:/var/lib/mysql',
+					EE_ROOT_DIR . '/services/mysql/config:/etc/mysql',
+					EE_ROOT_DIR . '/services/mysql/logs/:/var/log/mysql'
+				],
 				'networks'       => [
 					'global-backend-network',
 				],
@@ -140,7 +145,11 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'container_name' => GLOBAL_REDIS_CONTAINER,
 				'image'          => 'easyengine/redis:' . $img_versions['easyengine/redis'],
 				'restart'        => 'always',
-				'volumes'        => [ EE_ROOT_DIR . '/services/redis:/data' ],
+				'cmd'            => ["redis-server", "/usr/local/etc/redis/redis.conf"],
+				'volumes'        => [
+					EE_ROOT_DIR . '/services/redis/data:/data',
+					EE_ROOT_DIR . '/services/redis/redis.conf:/usr/local/etc/redis/redis.conf',
+				],
 				'networks'       => [
 					'global-backend-network',
 				],

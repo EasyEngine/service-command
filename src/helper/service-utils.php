@@ -78,7 +78,7 @@ function init_global_container( $service, $container = '' ) {
 		chdir( EE_ROOT_DIR . '/services' );
 		EE::docker()::boot_container( $container, 'docker-compose up -d ' . $service );
 	} else {
-		EE::warning( "$service: Service already running" );
+		EE::log( "$service: Service already running" );
 		return;
 	}
 

@@ -132,9 +132,9 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 					'MYSQL_ROOT_PASSWORD=' . \EE\Utils\random_password(),
 				],
 				'volumes'        => [
-					EE_ROOT_DIR . '/services/mysql/mariadb:/var/lib/mysql',
-					EE_ROOT_DIR . '/services/mysql/config:/etc/mysql',
-					EE_ROOT_DIR . '/services/mysql/logs/:/var/log/mysql'
+					EE_ROOT_DIR . '/services/mariadb:/var/lib/mysql',
+					EE_ROOT_DIR . '/services/mariadb/config:/etc/mysql',
+					EE_ROOT_DIR . '/services/mariadb/logs:/var/log/mysql'
 				],
 				'networks'       => [
 					'global-backend-network',

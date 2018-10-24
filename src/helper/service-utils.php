@@ -114,7 +114,7 @@ function create_global_volumes() {
 		],
 		[
 			'name'            => 'htpasswd',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/htpasswd  ',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/htpasswd',
 		],
 		[
 			'name'            => 'vhostd',

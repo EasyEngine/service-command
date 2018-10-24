@@ -98,18 +98,34 @@ function create_global_volumes() {
 
 	$volumes = [
 		[
-			'name'            => 'data_nginx_proxy',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy',
+			'name'            => 'nginx_proxy_certs',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/certs',
 		],
 		[
-			'name'            => 'html_nginx_proxy',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy-html',
+			'name'            => 'nginx_proxy_dhparam',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/dhparam',
+		],
+		[
+			'name'            => 'nginx_proxy_confd',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/conf.d',
+		],
+		[
+			'name'            => 'nginx_proxy_htpasswd',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/htpasswd  ',
+		],
+		[
+			'name'            => 'nginx_proxy_vhostd',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/vhost.d',
+		],
+		[
+			'name'            => 'nginx_proxy_html',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/html',
 		],
 	];
 
-	$volumes_db = [
+	$volumes_db    = [
 		[
-			'name' => 'data_db',
+			'name'            => 'data_db',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/app/db',
 		],
 	];
@@ -157,8 +173,12 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 					'LOCAL_GROUP_ID=' . posix_getegid(),
 				],
 				'volumes'        => [
-					'data_nginx_proxy:/etc/nginx',
-					'html_nginx_proxy:/usr/share/nginx/html',
+					'nginx_proxy_certs:/etc/nginx/certs',
+					'nginx_proxy_dhparam:/etc/nginx/dhparam',
+					'nginx_proxy_confd:/etc/nginx/conf.d',
+					'nginx_proxy_htpasswd:/etc/nginx/htpasswd',
+					'nginx_proxy_vhostd:/etc/nginx/vhost.d',
+					'nginx_proxy_html:/usr/share/nginx/html',
 					'/var/run/docker.sock:/tmp/docker.sock:ro',
 				],
 				'networks'       => [
@@ -191,8 +211,12 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 		'created_volumes' => [
 			'external_vols' => [
-				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'data_nginx_proxy' ],
-				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'html_nginx_proxy' ],
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'nginx_proxy_certs' ],
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'nginx_proxy_dhparam' ],
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'nginx_proxy_confd' ],
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'nginx_proxy_htpasswd' ],
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'nginx_proxy_vhostd' ],
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'nginx_proxy_html' ],
 				[ 'prefix' => GLOBAL_DB, 'ext_vol_name' => 'data_db' ],
 				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'data_redis' ],
 			],

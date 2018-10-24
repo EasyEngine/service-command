@@ -94,6 +94,9 @@ function init_global_container( $service, $container = '' ) {
 
 }
 
+/**
+ * Function to create all necessary volumes for global containers.
+ */
 function create_global_volumes() {
 
 	$volumes = [
@@ -152,7 +155,7 @@ function create_global_volumes() {
 /**
  * Generates global docker-compose.yml at EE_ROOT_DIR
  *
- * @param Filesystem $fs Filesystem object to write file
+ * @param Filesystem $fs Filesystem object to write file.
  */
 function generate_global_docker_compose_yml( Filesystem $fs ) {
 	$img_versions = EE\Utils\get_image_versions();

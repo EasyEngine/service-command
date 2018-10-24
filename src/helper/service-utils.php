@@ -101,40 +101,40 @@ function create_global_volumes() {
 
 	$volumes = [
 		[
-			'name'            => 'nginx_proxy_certs',
+			'name'            => 'certs',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/certs',
 		],
 		[
-			'name'            => 'nginx_proxy_dhparam',
+			'name'            => 'dhparam',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/dhparam',
 		],
 		[
-			'name'            => 'nginx_proxy_confd',
+			'name'            => 'confd',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/conf.d',
 		],
 		[
-			'name'            => 'nginx_proxy_htpasswd',
+			'name'            => 'htpasswd',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/htpasswd  ',
 		],
 		[
-			'name'            => 'nginx_proxy_vhostd',
+			'name'            => 'vhostd',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/vhost.d',
 		],
 		[
-			'name'            => 'nginx_proxy_html',
+			'name'            => 'html',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/html',
 		],
 	];
 
 	$volumes_db    = [
 		[
-			'name'            => 'data_db',
+			'name'            => 'data',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/app/db',
 		],
 	];
 	$volumes_redis = [
 		[
-			'name'            => 'data_redis',
+			'name'            => 'data',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/redis',
 		],
 	];
@@ -176,12 +176,12 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 					'LOCAL_GROUP_ID=' . posix_getegid(),
 				],
 				'volumes'        => [
-					'nginx_proxy_certs:/etc/nginx/certs',
-					'nginx_proxy_dhparam:/etc/nginx/dhparam',
-					'nginx_proxy_confd:/etc/nginx/conf.d',
-					'nginx_proxy_htpasswd:/etc/nginx/htpasswd',
-					'nginx_proxy_vhostd:/etc/nginx/vhost.d',
-					'nginx_proxy_html:/usr/share/nginx/html',
+					'certs:/etc/nginx/certs',
+					'dhparam:/etc/nginx/dhparam',
+					'confd:/etc/nginx/conf.d',
+					'htpasswd:/etc/nginx/htpasswd',
+					'vhostd:/etc/nginx/vhost.d',
+					'html:/usr/share/nginx/html',
 					'/var/run/docker.sock:/tmp/docker.sock:ro',
 				],
 				'networks'       => [
@@ -196,7 +196,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'environment'    => [
 					'MYSQL_ROOT_PASSWORD=' . \EE\Utils\random_password(),
 				],
-				'volumes'        => [ 'data_db:/var/lib/mysql' ],
+				'volumes'        => [ 'data:/var/lib/mysql' ],
 				'networks'       => [
 					'global-backend-network',
 				],
@@ -206,7 +206,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'container_name' => GLOBAL_REDIS_CONTAINER,
 				'image'          => 'easyengine/redis:' . $img_versions['easyengine/redis'],
 				'restart'        => 'always',
-				'volumes'        => [ 'data_redis:/data' ],
+				'volumes'        => [ 'data:/data' ],
 				'networks'       => [
 					'global-backend-network',
 				],
@@ -214,14 +214,14 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 		'created_volumes' => [
 			'external_vols' => [
-				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'nginx_proxy_certs' ],
-				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'nginx_proxy_dhparam' ],
-				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'nginx_proxy_confd' ],
-				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'nginx_proxy_htpasswd' ],
-				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'nginx_proxy_vhostd' ],
-				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'nginx_proxy_html' ],
-				[ 'prefix' => GLOBAL_DB, 'ext_vol_name' => 'data_db' ],
-				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'data_redis' ],
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'certs' ],
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'dhparam' ],
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'confd' ],
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'htpasswd' ],
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'vhostd' ],
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'html' ],
+				[ 'prefix' => GLOBAL_DB, 'ext_vol_name' => 'data' ],
+				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'data' ],
 			],
 		],
 	];

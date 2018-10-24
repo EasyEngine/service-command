@@ -26,17 +26,19 @@ function nginx_proxy_check() {
 
 			$fs = new Filesystem();
 
+			create_global_volumes();
+
 			if ( ! $fs->exists( EE_ROOT_DIR . '/services/docker-compose.yml' ) ) {
 				generate_global_docker_compose_yml( $fs );
 			}
 
 			$EE_ROOT_DIR = EE_ROOT_DIR;
 			if ( ! EE::docker()::docker_network_exists( GLOBAL_BACKEND_NETWORK ) &&
-				! EE::docker()::create_network( GLOBAL_BACKEND_NETWORK ) ) {
+			     ! EE::docker()::create_network( GLOBAL_BACKEND_NETWORK ) ) {
 				EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
 			}
 			if ( ! EE::docker()::docker_network_exists( GLOBAL_FRONTEND_NETWORK ) &&
-				! EE::docker()::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
+			     ! EE::docker()::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
 				EE::error( 'Unable to create network ' . GLOBAL_FRONTEND_NETWORK );
 			}
 			if ( EE::docker()::docker_compose_up( EE_ROOT_DIR . '/services', [ 'global-nginx-proxy' ] ) ) {
@@ -60,11 +62,11 @@ function init_global_container( $service, $container = '' ) {
 		$container = 'ee-' . $service;
 	}
 	if ( ! EE::docker()::docker_network_exists( GLOBAL_BACKEND_NETWORK ) &&
-		! EE::docker()::create_network( GLOBAL_BACKEND_NETWORK ) ) {
+	     ! EE::docker()::create_network( GLOBAL_BACKEND_NETWORK ) ) {
 		EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
 	}
 	if ( ! EE::docker()::docker_network_exists( GLOBAL_FRONTEND_NETWORK ) &&
-		! EE::docker()::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
+	     ! EE::docker()::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
 		EE::error( 'Unable to create network ' . GLOBAL_FRONTEND_NETWORK );
 	}
 
@@ -76,14 +78,59 @@ function init_global_container( $service, $container = '' ) {
 
 	if ( 'running' !== EE::docker()::container_status( $container ) ) {
 		chdir( EE_ROOT_DIR . '/services' );
+
+		if ( empty( EE::docker()::get_volumes_by_label( $service ) ) ) {
+			create_global_volumes();
+		}
+
 		EE::docker()::boot_container( $container, 'docker-compose up -d ' . $service );
 	} else {
 		EE::log( "$service: Service already running" );
+
 		return;
 	}
 
 	EE::success( "$container container is up" );
 
+}
+
+function create_global_volumes() {
+
+	$volumes = [
+		[
+			'name'            => 'data_nginx_proxy',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy',
+		],
+		[
+			'name'            => 'html_nginx_proxy',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy-html',
+		],
+	];
+
+	$volumes_db = [
+		[
+			'name' => 'data_db',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/app/db',
+		],
+	];
+	$volumes_redis = [
+		[
+			'name'            => 'data_redis',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/redis',
+		],
+	];
+
+	if ( empty( EE::docker()::get_volumes_by_label( 'global-nginx-proxy' ) ) ) {
+		EE::docker()::create_volumes( 'global-nginx-proxy', $volumes, false );
+	}
+
+	if ( empty( EE::docker()::get_volumes_by_label( GLOBAL_DB ) ) ) {
+		EE::docker()::create_volumes( GLOBAL_DB, $volumes_db, false );
+	}
+
+	if ( empty( EE::docker()::get_volumes_by_label( GLOBAL_REDIS ) ) ) {
+		EE::docker()::create_volumes( GLOBAL_REDIS, $volumes_redis, false );
+	}
 }
 
 /**
@@ -95,7 +142,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 	$img_versions = EE\Utils\get_image_versions();
 
 	$data = [
-		'services' => [
+		'services'        => [
 			[
 				'name'           => 'global-nginx-proxy',
 				'container_name' => EE_PROXY_TYPE,
@@ -110,12 +157,8 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 					'LOCAL_GROUP_ID=' . posix_getegid(),
 				],
 				'volumes'        => [
-					EE_ROOT_DIR . '/services/nginx-proxy/certs:/etc/nginx/certs',
-					EE_ROOT_DIR . '/services/nginx-proxy/dhparam:/etc/nginx/dhparam',
-					EE_ROOT_DIR . '/services/nginx-proxy/conf.d:/etc/nginx/conf.d',
-					EE_ROOT_DIR . '/services/nginx-proxy/htpasswd:/etc/nginx/htpasswd',
-					EE_ROOT_DIR . '/services/nginx-proxy/vhost.d:/etc/nginx/vhost.d',
-					EE_ROOT_DIR . '/services/nginx-proxy/html:/usr/share/nginx/html',
+					'data_nginx_proxy:/etc/nginx',
+					'html_nginx_proxy:/usr/share/nginx/html',
 					'/var/run/docker.sock:/tmp/docker.sock:ro',
 				],
 				'networks'       => [
@@ -130,7 +173,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'environment'    => [
 					'MYSQL_ROOT_PASSWORD=' . \EE\Utils\random_password(),
 				],
-				'volumes'        => [ './app/db:/var/lib/mysql' ],
+				'volumes'        => [ 'data_db:/var/lib/mysql' ],
 				'networks'       => [
 					'global-backend-network',
 				],
@@ -140,10 +183,18 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'container_name' => GLOBAL_REDIS_CONTAINER,
 				'image'          => 'easyengine/redis:' . $img_versions['easyengine/redis'],
 				'restart'        => 'always',
-				'volumes'        => [ EE_ROOT_DIR . '/services/redis:/data' ],
+				'volumes'        => [ 'data_redis:/data' ],
 				'networks'       => [
 					'global-backend-network',
 				],
+			],
+		],
+		'created_volumes' => [
+			'external_vols' => [
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'data_nginx_proxy' ],
+				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'html_nginx_proxy' ],
+				[ 'prefix' => GLOBAL_DB, 'ext_vol_name' => 'data_db' ],
+				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'data_redis' ],
 			],
 		],
 	];

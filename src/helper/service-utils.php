@@ -106,23 +106,23 @@ function create_global_volumes() {
 		],
 		[
 			'name'            => 'nginx_proxy_dhparam',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/dhparam',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/dhparam',
 		],
 		[
 			'name'            => 'nginx_proxy_confd',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/conf.d',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/conf.d',
 		],
 		[
 			'name'            => 'nginx_proxy_htpasswd',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/htpasswd  ',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/htpasswd  ',
 		],
 		[
 			'name'            => 'nginx_proxy_vhostd',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/vhost.d',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/vhost.d',
 		],
 		[
 			'name'            => 'nginx_proxy_html',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/html',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/html',
 		],
 	];
 

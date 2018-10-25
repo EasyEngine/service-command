@@ -13,15 +13,17 @@ function nginx_proxy_check() {
 
 	$proxy_type = EE_PROXY_TYPE;
 	if ( 'running' !== EE::docker()::container_status( $proxy_type ) ) {
+		$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', 80 );
+		$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', 443 );
 		/**
 		 * Checking ports.
 		 */
-		$port_80_status  = \EE\Utils\get_curl_info( 'localhost', 80, true );
-		$port_443_status = \EE\Utils\get_curl_info( 'localhost', 443, true );
+		$port_80_status  = \EE\Utils\get_curl_info( 'localhost', $config_80_port, true );
+		$port_443_status = \EE\Utils\get_curl_info( 'localhost', $config_443_port, true );
 
 		// if any/both the port/s is/are occupied.
 		if ( ! ( $port_80_status && $port_443_status ) ) {
-			EE::error( 'Cannot create/start proxy container. Please make sure port 80 and 443 are free.' );
+			EE::error( "Cannot create/start proxy container. Please make sure port $config_80_port and $config_443_port are free." );
 		} else {
 
 			$fs = new Filesystem();
@@ -158,7 +160,10 @@ function create_global_volumes() {
  * @param Filesystem $fs Filesystem object to write file.
  */
 function generate_global_docker_compose_yml( Filesystem $fs ) {
-	$img_versions = EE\Utils\get_image_versions();
+
+	$img_versions    = EE\Utils\get_image_versions();
+	$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', 80 );
+	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', 443 );
 
 	$data = [
 		'services'        => [
@@ -168,8 +173,8 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'image'          => 'easyengine/nginx-proxy:' . $img_versions['easyengine/nginx-proxy'],
 				'restart'        => 'always',
 				'ports'          => [
-					'80:80',
-					'443:443',
+					"$config_80_port:80",
+					"$config_443_port:443",
 				],
 				'environment'    => [
 					'LOCAL_USER_ID=' . posix_geteuid(),

@@ -128,13 +128,13 @@ function create_global_volumes() {
 
 	$volumes_db    = [
 		[
-			'name'            => 'data',
+			'name'            => 'data_db',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/app/db',
 		],
 	];
 	$volumes_redis = [
 		[
-			'name'            => 'data',
+			'name'            => 'data_redis',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/redis',
 		],
 	];
@@ -196,7 +196,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'environment'    => [
 					'MYSQL_ROOT_PASSWORD=' . \EE\Utils\random_password(),
 				],
-				'volumes'        => [ 'data:/var/lib/mysql' ],
+				'volumes'        => [ 'data_db:/var/lib/mysql' ],
 				'networks'       => [
 					'global-backend-network',
 				],
@@ -206,7 +206,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'container_name' => GLOBAL_REDIS_CONTAINER,
 				'image'          => 'easyengine/redis:' . $img_versions['easyengine/redis'],
 				'restart'        => 'always',
-				'volumes'        => [ 'data:/data' ],
+				'volumes'        => [ 'data_redis:/data' ],
 				'networks'       => [
 					'global-backend-network',
 				],
@@ -220,8 +220,8 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'htpasswd' ],
 				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'vhostd' ],
 				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'html' ],
-				[ 'prefix' => GLOBAL_DB, 'ext_vol_name' => 'data' ],
-				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'data' ],
+				[ 'prefix' => GLOBAL_DB, 'ext_vol_name' => 'data_db' ],
+				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'data_redis' ],
 			],
 		],
 	];

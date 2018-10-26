@@ -12,43 +12,52 @@ use Symfony\Component\Filesystem\Filesystem;
 function nginx_proxy_check() {
 
 	$proxy_type = EE_PROXY_TYPE;
-	if ( 'running' !== EE::docker()::container_status( $proxy_type ) ) {
-		$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', 80 );
-		$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', 443 );
-		/**
-		 * Checking ports.
-		 */
-		$port_80_status  = \EE\Utils\get_curl_info( 'localhost', $config_80_port, true );
-		$port_443_status = \EE\Utils\get_curl_info( 'localhost', $config_443_port, true );
 
-		// if any/both the port/s is/are occupied.
-		if ( ! ( $port_80_status && $port_443_status ) ) {
-			EE::error( "Cannot create/start proxy container. Please make sure port $config_80_port and $config_443_port are free." );
+	$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', 80 );
+	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', 443 );
+
+	if ( 'running' === EE::docker()::container_status( $proxy_type ) ) {
+		$launch_80_test  = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\'' );
+		$launch_443_test = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\'' );
+
+		if ( $config_80_port !== trim( $launch_80_test->stdout ) || $config_443_port !== trim( $launch_443_test->stdout ) ) {
+			EE::error( "Ports of current running nginx-proxy and ports specified in EasyEngine config file don't match." );
+		}
+	}
+
+	/**
+	 * Checking ports.
+	 */
+	$port_80_status  = \EE\Utils\get_curl_info( 'localhost', $config_80_port, true );
+	$port_443_status = \EE\Utils\get_curl_info( 'localhost', $config_443_port, true );
+
+	// if any/both the port/s is/are occupied.
+	if ( ! ( $port_80_status && $port_443_status ) ) {
+		EE::error( "Cannot create/start proxy container. Please make sure port $config_80_port and $config_443_port are free." );
+	} else {
+
+		$fs = new Filesystem();
+
+		create_global_volumes();
+
+		if ( ! $fs->exists( EE_ROOT_DIR . '/services/docker-compose.yml' ) ) {
+			generate_global_docker_compose_yml( $fs );
+		}
+
+		$EE_ROOT_DIR = EE_ROOT_DIR;
+		if ( ! EE::docker()::docker_network_exists( GLOBAL_BACKEND_NETWORK ) &&
+		     ! EE::docker()::create_network( GLOBAL_BACKEND_NETWORK ) ) {
+			EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
+		}
+		if ( ! EE::docker()::docker_network_exists( GLOBAL_FRONTEND_NETWORK ) &&
+		     ! EE::docker()::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
+			EE::error( 'Unable to create network ' . GLOBAL_FRONTEND_NETWORK );
+		}
+		if ( EE::docker()::docker_compose_up( EE_ROOT_DIR . '/services', [ 'global-nginx-proxy' ] ) ) {
+			$fs->dumpFile( "$EE_ROOT_DIR/services/nginx-proxy/conf.d/custom.conf", file_get_contents( EE_ROOT . '/templates/custom.conf.mustache' ) );
+			EE::success( "$proxy_type container is up." );
 		} else {
-
-			$fs = new Filesystem();
-
-			create_global_volumes();
-
-			if ( ! $fs->exists( EE_ROOT_DIR . '/services/docker-compose.yml' ) ) {
-				generate_global_docker_compose_yml( $fs );
-			}
-
-			$EE_ROOT_DIR = EE_ROOT_DIR;
-			if ( ! EE::docker()::docker_network_exists( GLOBAL_BACKEND_NETWORK ) &&
-			     ! EE::docker()::create_network( GLOBAL_BACKEND_NETWORK ) ) {
-				EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
-			}
-			if ( ! EE::docker()::docker_network_exists( GLOBAL_FRONTEND_NETWORK ) &&
-			     ! EE::docker()::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
-				EE::error( 'Unable to create network ' . GLOBAL_FRONTEND_NETWORK );
-			}
-			if ( EE::docker()::docker_compose_up( EE_ROOT_DIR . '/services', [ 'global-nginx-proxy' ] ) ) {
-				$fs->dumpFile( "$EE_ROOT_DIR/services/nginx-proxy/conf.d/custom.conf", file_get_contents( EE_ROOT . '/templates/custom.conf.mustache' ) );
-				EE::success( "$proxy_type container is up." );
-			} else {
-				EE::error( "There was some error in starting $proxy_type container. Please check logs." );
-			}
+			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
 	}
 }

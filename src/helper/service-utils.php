@@ -18,7 +18,7 @@ function nginx_proxy_check() {
 
 	if ( 'running' === EE::docker()::container_status( $proxy_type ) ) {
 		$launch_80_test  = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\' ee-global-nginx-proxy' );
-		$launch_443_test = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\' ee-global-nginx-proxy' );
+		$launch_443_test = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "443/tcp") 0).HostPort }}\' ee-global-nginx-proxy' );
 
 		if ( $config_80_port !== trim( $launch_80_test->stdout ) || $config_443_port !== trim( $launch_443_test->stdout ) ) {
 			EE::error( "Ports of current running nginx-proxy and ports specified in EasyEngine config file don't match." );
@@ -46,10 +46,7 @@ function nginx_proxy_check() {
 
 		$EE_ROOT_DIR = EE_ROOT_DIR;
 		boot_global_networks();
-		if ( EE::docker()::docker_compose_up( EE_ROOT_DIR . '/services', [ 'global-nginx-proxy' ] ) ) {
-			$fs->dumpFile( "$EE_ROOT_DIR/services/nginx-proxy/conf.d/custom.conf", file_get_contents( EE_ROOT . '/templates/custom.conf.mustache' ) );
-			EE::success( "$proxy_type container is up." );
-		} else {
+		if ( ! EE::docker()::docker_compose_up( EE_ROOT_DIR . '/services', [ 'global-nginx-proxy' ] ) ) {
 			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
 	}

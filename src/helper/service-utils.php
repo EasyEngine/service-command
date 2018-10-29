@@ -17,8 +17,8 @@ function nginx_proxy_check() {
 	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', 443 );
 
 	if ( 'running' === EE::docker()::container_status( $proxy_type ) ) {
-		$launch_80_test  = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\'' );
-		$launch_443_test = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\'' );
+		$launch_80_test  = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\' ee-global-nginx-proxy' );
+		$launch_443_test = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\' ee-global-nginx-proxy' );
 
 		if ( $config_80_port !== trim( $launch_80_test->stdout ) || $config_443_port !== trim( $launch_443_test->stdout ) ) {
 			EE::error( "Ports of current running nginx-proxy and ports specified in EasyEngine config file don't match." );

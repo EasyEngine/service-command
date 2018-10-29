@@ -12,34 +12,45 @@ use Symfony\Component\Filesystem\Filesystem;
 function nginx_proxy_check() {
 
 	$proxy_type = EE_PROXY_TYPE;
-	if ( 'running' !== EE::docker()::container_status( $proxy_type ) ) {
-		/**
-		 * Checking ports.
-		 */
-		$port_80_status  = \EE\Utils\get_curl_info( 'localhost', 80, true );
-		$port_443_status = \EE\Utils\get_curl_info( 'localhost', 443, true );
 
-		// if any/both the port/s is/are occupied.
-		if ( ! ( $port_80_status && $port_443_status ) ) {
-			EE::error( 'Cannot create/start proxy container. Please make sure port 80 and 443 are free.' );
+	$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', 80 );
+	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', 443 );
+
+	if ( 'running' === EE::docker()::container_status( $proxy_type ) ) {
+		$launch_80_test  = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\'' );
+		$launch_443_test = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\'' );
+
+		if ( $config_80_port !== trim( $launch_80_test->stdout ) || $config_443_port !== trim( $launch_443_test->stdout ) ) {
+			EE::error( "Ports of current running nginx-proxy and ports specified in EasyEngine config file don't match." );
+		}
+	}
+
+	/**
+	 * Checking ports.
+	 */
+	$port_80_status  = \EE\Utils\get_curl_info( 'localhost', $config_80_port, true );
+	$port_443_status = \EE\Utils\get_curl_info( 'localhost', $config_443_port, true );
+
+	// if any/both the port/s is/are occupied.
+	if ( ! ( $port_80_status && $port_443_status ) ) {
+		EE::error( "Cannot create/start proxy container. Please make sure port $config_80_port and $config_443_port are free." );
+	} else {
+
+		$fs = new Filesystem();
+
+		create_global_volumes();
+
+		if ( ! $fs->exists( EE_ROOT_DIR . '/services/docker-compose.yml' ) ) {
+			generate_global_docker_compose_yml( $fs );
+		}
+
+		$EE_ROOT_DIR = EE_ROOT_DIR;
+		boot_global_networks();
+		if ( EE::docker()::docker_compose_up( EE_ROOT_DIR . '/services', [ 'global-nginx-proxy' ] ) ) {
+			$fs->dumpFile( "$EE_ROOT_DIR/services/nginx-proxy/conf.d/custom.conf", file_get_contents( EE_ROOT . '/templates/custom.conf.mustache' ) );
+			EE::success( "$proxy_type container is up." );
 		} else {
-
-			$fs = new Filesystem();
-
-			create_global_volumes();
-
-			if ( ! $fs->exists( EE_ROOT_DIR . '/services/docker-compose.yml' ) ) {
-				generate_global_docker_compose_yml( $fs );
-			}
-
-			$EE_ROOT_DIR = EE_ROOT_DIR;
-			boot_global_networks();
-			if ( EE::docker()::docker_compose_up( EE_ROOT_DIR . '/services', [ 'global-nginx-proxy' ] ) ) {
-				$fs->dumpFile( "$EE_ROOT_DIR/services/nginx-proxy/conf.d/custom.conf", file_get_contents( EE_ROOT . '/templates/custom.conf.mustache' ) );
-				EE::success( "$proxy_type container is up." );
-			} else {
-				EE::error( "There was some error in starting $proxy_type container. Please check logs." );
-			}
+			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
 	}
 }
@@ -179,7 +190,10 @@ function create_global_volumes() {
  * @param Filesystem $fs Filesystem object to write file.
  */
 function generate_global_docker_compose_yml( Filesystem $fs ) {
-	$img_versions = EE\Utils\get_image_versions();
+
+	$img_versions    = EE\Utils\get_image_versions();
+	$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', 80 );
+	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', 443 );
 
 	$data = [
 		'services'        => [
@@ -189,8 +203,8 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'image'          => 'easyengine/nginx-proxy:' . $img_versions['easyengine/nginx-proxy'],
 				'restart'        => 'always',
 				'ports'          => [
-					'80:80',
-					'443:443',
+					"$config_80_port:80",
+					"$config_443_port:443",
 				],
 				'environment'    => [
 					'LOCAL_USER_ID=' . posix_geteuid(),

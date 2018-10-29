@@ -41,10 +41,7 @@ function nginx_proxy_check() {
 			     ! EE::docker()::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
 				EE::error( 'Unable to create network ' . GLOBAL_FRONTEND_NETWORK );
 			}
-			if ( EE::docker()::docker_compose_up( EE_ROOT_DIR . '/services', [ 'global-nginx-proxy' ] ) ) {
-				$fs->dumpFile( "$EE_ROOT_DIR/services/nginx-proxy/conf.d/custom.conf", file_get_contents( EE_ROOT . '/templates/custom.conf.mustache' ) );
-				EE::success( "$proxy_type container is up." );
-			} else {
+			if ( ! EE::docker()::docker_compose_up( EE_ROOT_DIR . '/services', [ 'global-nginx-proxy' ] ) ) {
 				EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 			}
 		}

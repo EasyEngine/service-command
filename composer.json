@@ -11,7 +11,10 @@
         "psr-4": {
             "": "src/"
         },
-        "files": [ "service-command.php" ]
+        "files": [
+            "src/helper/service-utils.php",
+            "service-command.php"
+        ]
     },
     "extra": {
         "branch-alias": {
@@ -19,6 +22,7 @@
         },
         "bundled": true,
         "commands": [
+            "service",
             "service start",
             "service stop",
             "service restart",

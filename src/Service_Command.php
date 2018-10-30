@@ -1,6 +1,6 @@
 <?php
 
-use EE\Utils;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Manages global services of EasyEngine.
@@ -19,15 +19,23 @@ class Service_Command extends EE_Command {
 	 */
 	private $whitelisted_services = [
 		'nginx-proxy',
+		'db',
+		'redis',
 	];
 
 	/**
 	 * Service_Command constructor.
 	 *
-	 * Changes directory to EE_CONF_ROOT since that's where all docker-compose commands will be executed
+	 * Changes directory to EE_ROOT_DIR since that's where all docker-compose commands will be executed
 	 */
 	public function __construct() {
-		chdir( EE_CONF_ROOT );
+
+		$services_path = EE_ROOT_DIR . '/services';
+		if ( ! is_dir( $services_path ) ) {
+			mkdir( $services_path );
+		}
+		chdir( $services_path );
+
 	}
 
 	/**
@@ -37,11 +45,23 @@ class Service_Command extends EE_Command {
 	 *
 	 * <service-name>
 	 * : Name of service.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Enable global service
+	 *     $ ee service enable nginx-proxy
+	 *
 	 */
-	public function start( $args, $assoc_args ) {
-		$service = $this->filter_service( $args );
+	public function enable( $args, $assoc_args ) {
+		$service   = $this->filter_service( $args );
+		$container = "ee-$service";
 
-		EE::exec( "docker-compose start $service", true, true );
+		if ( EE_PROXY_TYPE === $container ) {
+			\EE\Service\Utils\nginx_proxy_check();
+		} else {
+			\EE\Service\Utils\init_global_container( $service );
+		}
+
 	}
 
 	/**
@@ -54,7 +74,9 @@ class Service_Command extends EE_Command {
 			EE::error( "Unable to find global EasyEngine service $args[0]" );
 		}
 
-		return $services[0];
+		$services = array_values( $services );
+
+		return 'global-' . $services[0];
 	}
 
 	/**
@@ -64,8 +86,14 @@ class Service_Command extends EE_Command {
 	 *
 	 * <service-name>
 	 * : Name of service.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Disable global service
+	 *     $ ee service disable nginx-proxy
+	 *
 	 */
-	public function stop( $args, $assoc_args ) {
+	public function disable( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
 		EE::exec( "docker-compose stop $service", true, true );
 	}
@@ -77,6 +105,12 @@ class Service_Command extends EE_Command {
 	 *
 	 * <service-name>
 	 * : Name of service.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Restart global service
+	 *     $ ee service restart nginx-proxy
+	 *
 	 */
 	public function restart( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
@@ -90,11 +124,21 @@ class Service_Command extends EE_Command {
 	 *
 	 * <service-name>
 	 * : Name of service.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Reload global service
+	 *     $ ee service reload nginx-proxy
+	 *
 	 */
 	public function reload( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
-		$command   = $this->service_reload_command( $service );
-		EE::exec( "docker-compose exec $service $command", true, true );
+		$command = $this->service_reload_command( $service );
+		if ( $command ) {
+			EE::exec( "docker-compose exec $service $command", true, true );
+		} else {
+			EE::warning( "$service can not be reloaded." );
+		}
 	}
 
 	/**
@@ -107,9 +151,9 @@ class Service_Command extends EE_Command {
 	 */
 	private function service_reload_command( string $service ) {
 		$command_map = [
-			'nginx-proxy' => "sh -c 'nginx -t && service nginx reload'",
+			'global-nginx-proxy' => 'sh -c "/app/docker-entrypoint.sh /usr/local/bin/docker-gen /app/nginx.tmpl /etc/nginx/conf.d/default.conf; /usr/sbin/nginx -t; /usr/sbin/nginx -s reload"',
 		];
 
-		return $command_map[ $service ];
+		return array_key_exists( $service, $command_map ) ? $command_map[ $service ] : false;
 	}
 }

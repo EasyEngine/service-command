@@ -41,13 +41,13 @@ function nginx_proxy_check() {
 
 		create_global_volumes();
 
-		if ( ! $fs->exists( EE_ROOT_DIR . '/services/docker-compose.yml' ) ) {
+		if ( ! $fs->exists( EE_SERVICE_DIR . '/docker-compose.yml' ) ) {
 			generate_global_docker_compose_yml( $fs );
 		}
 
 		$EE_ROOT_DIR = EE_ROOT_DIR;
 		boot_global_networks();
-		if ( ! EE::docker()::docker_compose_up( EE_ROOT_DIR . '/services', [ 'global-nginx-proxy' ] ) ) {
+		if ( ! EE::docker()::docker_compose_up( EE_SERVICE_DIR . '', [ 'global-nginx-proxy' ] ) ) {
 			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
 	}
@@ -68,12 +68,12 @@ function init_global_container( $service, $container = '' ) {
 
 	$fs = new Filesystem();
 
-	if ( ! $fs->exists( EE_ROOT_DIR . '/services/docker-compose.yml' ) ) {
+	if ( ! $fs->exists( EE_SERVICE_DIR . '/docker-compose.yml' ) ) {
 		generate_global_docker_compose_yml( $fs );
 	}
 
 	if ( 'running' !== EE::docker()::container_status( $container ) ) {
-		chdir( EE_ROOT_DIR . '/services' );
+		chdir( EE_SERVICE_DIR . '' );
 
 		if ( empty( EE::docker()::get_volumes_by_label( $service ) ) ) {
 			create_global_volumes();
@@ -112,60 +112,60 @@ function create_global_volumes() {
 	$volumes = [
 		[
 			'name'            => 'certs',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/certs',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/certs',
 		],
 		[
 			'name'            => 'dhparam',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/dhparam',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/dhparam',
 		],
 		[
 			'name'            => 'confd',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/conf.d',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/conf.d',
 		],
 		[
 			'name'            => 'htpasswd',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/htpasswd',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/htpasswd',
 		],
 		[
 			'name'            => 'vhostd',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/vhost.d',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/vhost.d',
 		],
 		[
 			'name'            => 'html',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/html',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/html',
 		],
 		[
 			'name'            => 'nginx_proxy_logs',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/logs',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/logs',
 		],
 	];
 
 	$volumes_db    = [
 		[
 			'name'            => 'db_data',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/data',
+			'path_to_symlink' => EE_SERVICE_DIR . '/mariadb/data',
 		],
 		[
 			'name'            => 'db_conf',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/conf',
+			'path_to_symlink' => EE_SERVICE_DIR . '/mariadb/conf',
 		],
 		[
 			'name'            => 'db_logs',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/logs',
+			'path_to_symlink' => EE_SERVICE_DIR . '/mariadb/logs',
 		],
 	];
 	$volumes_redis = [
 		[
 			'name'            => 'redis_data',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/redis/data',
+			'path_to_symlink' => EE_SERVICE_DIR . '/redis/data',
 		],
 		[
 			'name'            => 'redis_conf',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/redis/conf',
+			'path_to_symlink' => EE_SERVICE_DIR . '/redis/conf',
 		],
 		[
 			'name'            => 'redis_logs',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/redis/logs',
+			'path_to_symlink' => EE_SERVICE_DIR . '/redis/logs',
 		],
 	];
 
@@ -275,5 +275,5 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 	];
 
 	$contents = EE\Utils\mustache_render( SERVICE_TEMPLATE_ROOT . '/global_docker_compose.yml.mustache', $data );
-	$fs->dumpFile( EE_ROOT_DIR . '/services/docker-compose.yml', $contents );
+	$fs->dumpFile( EE_SERVICE_DIR . '/docker-compose.yml', $contents );
 }

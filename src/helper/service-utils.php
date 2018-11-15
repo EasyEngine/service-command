@@ -50,6 +50,7 @@ function nginx_proxy_check() {
 		if ( ! EE::docker()::docker_compose_up( EE_SERVICE_DIR . '', [ 'global-nginx-proxy' ] ) ) {
 			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
+		set_nginx_proxy_version_conf();
 	}
 }
 
@@ -276,4 +277,24 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 
 	$contents = EE\Utils\mustache_render( SERVICE_TEMPLATE_ROOT . '/global_docker_compose.yml.mustache', $data );
 	$fs->dumpFile( EE_SERVICE_DIR . '/docker-compose.yml', $contents );
+}
+
+/**
+ * Function to set nginx-proxy version.conf file.
+ */
+function set_nginx_proxy_version_conf() {
+
+	if ( 'running' !== EE::docker()::container_status( EE_PROXY_TYPE ) ) {
+		return;
+	}
+	chdir( EE_SERVICE_DIR );
+	$version_line    = sprintf( 'add_header X-Powered-By \"EasyEngine v%s\";', EE_VERSION );
+	$version_file    = '/version.conf';
+	$version_success = EE::exec( sprintf( 'docker-compose exec global-nginx-proxy bash -c \'echo "%s" > %s\'', $version_line, $version_file ), false, false, [
+		$version_file,
+		$version_line,
+	] );
+	if ( $version_success ) {
+		EE::exec( 'docker-compose exec global-nginx-proxy bash -c "nginx -t && nginx -s reload"' );
+	}
 }

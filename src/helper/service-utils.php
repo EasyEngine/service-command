@@ -23,6 +23,7 @@ function nginx_proxy_check() {
 		if ( $config_80_port !== trim( $launch_80_test->stdout ) || $config_443_port !== trim( $launch_443_test->stdout ) ) {
 			EE::error( "Ports of current running nginx-proxy and ports specified in EasyEngine config file don't match." );
 		}
+
 		return;
 	}
 
@@ -39,12 +40,10 @@ function nginx_proxy_check() {
 
 		$fs = new Filesystem();
 
-
 		if ( ! $fs->exists( EE_ROOT_DIR . '/services/docker-compose.yml' ) ) {
 			generate_global_docker_compose_yml( $fs );
 		}
 
-		$EE_ROOT_DIR = EE_ROOT_DIR;
 		boot_global_networks();
 		if ( ! EE::docker()::docker_compose_up( EE_ROOT_DIR . '/services', [ 'global-nginx-proxy' ] ) ) {
 			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
@@ -73,10 +72,6 @@ function init_global_container( $service, $container = '' ) {
 
 	if ( 'running' !== EE::docker()::container_status( $container ) ) {
 		chdir( EE_ROOT_DIR . '/services' );
-
-		if ( empty( EE::docker()::get_volumes_by_label( $service ) ) ) {
-		}
-
 		EE::docker()::boot_container( $container, 'docker-compose up -d ' . $service );
 	} else {
 		EE::log( "$service: Service already running" );
@@ -109,34 +104,56 @@ function boot_global_networks() {
  */
 function generate_global_docker_compose_yml( Filesystem $fs ) {
 
-	$volumes = [
+	$img_versions    = EE\Utils\get_image_versions();
+	$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', 80 );
+	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', 443 );
+
+	$volumes_nginx_proxy = [
 		[
 			'name'            => 'certs',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/certs',
+			'container_path'  => '/etc/nginx/certs',
 		],
 		[
 			'name'            => 'dhparam',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/dhparam',
+			'container_path'  => '/etc/nginx/dhparam',
 		],
 		[
 			'name'            => 'confd',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/conf.d',
+			'container_path'  => '/etc/nginx/conf.d',
 		],
 		[
 			'name'            => 'htpasswd',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/htpasswd',
+			'container_path'  => '/etc/nginx/htpasswd',
 		],
 		[
 			'name'            => 'vhostd',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/vhost.d',
+			'container_path'  => '/etc/nginx/vhost.d',
 		],
 		[
 			'name'            => 'html',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/html',
+			'container_path'  => '/usr/share/nginx/html',
 		],
 		[
 			'name'            => 'nginx_proxy_logs',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/logs',
+			'container_path'  => '/var/log/nginx',
+		],
+		[
+			'name'            => 'nginx_proxy_logs',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/logs',
+			'container_path'  => '/var/log/nginx',
+		],
+		[
+			'name'            => '/var/run/docker.sock',
+			'path_to_symlink' => '/var/run/docker.sock',
+			'container_path'  => '/tmp/docker.sock:ro',
+			'skip_volume'     => true,
 		],
 	];
 
@@ -144,110 +161,51 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		[
 			'name'            => 'db_data',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/data',
+			'container_path'  => '/var/lib/mysql',
 		],
 		[
 			'name'            => 'db_conf',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/conf',
+			'container_path'  => '/etc/mysql',
+			'skip_darwin'     => true,
 		],
+		// TODO: Add config file creation for Darwin.
+		// [
+		// 	'name'            => 'db_conf',
+		// 	'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/conf/my.cnf',
+		// 	'container_path'  => '/etc/mysql/my.cnf',
+		// 	'skip_linux'      => true,
+		// 	'skip_volume'     => true,
+		// ],
 		[
 			'name'            => 'db_logs',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/logs',
+			'container_path'  => '/var/log/mysql',
 		],
 	];
 	$volumes_redis = [
 		[
 			'name'            => 'redis_data',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/redis/data',
+			'container_path'  => '/data',
+			'skip_darwin'     => true,
 		],
 		[
 			'name'            => 'redis_conf',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/redis/conf',
+			'container_path'  => '/usr/local/etc/redis',
+			'skip_darwin'     => true,
 		],
 		[
 			'name'            => 'redis_logs',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/redis/logs',
+			'container_path'  => '/var/log/redis',
 		],
 	];
 
-	if ( empty( EE::docker()::get_volumes_by_label( 'global-nginx-proxy' ) ) ) {
-		EE::docker()::create_volumes( 'global-nginx-proxy', $volumes, false );
-	}
+	if ( ! IS_DARWIN ) {
 
-	if ( empty( EE::docker()::get_volumes_by_label( GLOBAL_DB ) ) ) {
-		EE::docker()::create_volumes( GLOBAL_DB, $volumes_db, false );
-	}
-
-	if ( empty( EE::docker()::get_volumes_by_label( GLOBAL_REDIS ) ) ) {
-		EE::docker()::create_volumes( GLOBAL_REDIS, $volumes_redis, false );
-	}
-
-	$img_versions    = EE\Utils\get_image_versions();
-	$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', 80 );
-	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', 443 );
-
-	$data = [
-		'services'        => [
-			[
-				'name'           => 'global-nginx-proxy',
-				'container_name' => EE_PROXY_TYPE,
-				'image'          => 'easyengine/nginx-proxy:' . $img_versions['easyengine/nginx-proxy'],
-				'restart'        => 'always',
-				'ports'          => [
-					"$config_80_port:80",
-					"$config_443_port:443",
-				],
-				'environment'    => [
-					'LOCAL_USER_ID=' . posix_geteuid(),
-					'LOCAL_GROUP_ID=' . posix_getegid(),
-				],
-				'volumes'        => [
-					'certs:/etc/nginx/certs',
-					'dhparam:/etc/nginx/dhparam',
-					'confd:/etc/nginx/conf.d',
-					'htpasswd:/etc/nginx/htpasswd',
-					'vhostd:/etc/nginx/vhost.d',
-					'html:/usr/share/nginx/html',
-					'nginx_proxy_logs:/var/log/nginx',
-					'/var/run/docker.sock:/tmp/docker.sock:ro',
-				],
-				'networks'       => [
-					'global-frontend-network',
-				],
-			],
-			[
-				'name'           => GLOBAL_DB,
-				'container_name' => GLOBAL_DB_CONTAINER,
-				'image'          => 'easyengine/mariadb:' . $img_versions['easyengine/mariadb'],
-				'restart'        => 'always',
-				'environment'    => [
-					'MYSQL_ROOT_PASSWORD=' . \EE\Utils\random_password(),
-				],
-				'volumes'        => [
-					'db_data:/var/lib/mysql',
-					'db_conf:/etc/mysql',
-					'db_logs:/var/log/mysql',
-				],
-				'networks'       => [
-					'global-backend-network',
-				],
-			],
-			[
-				'name'           => GLOBAL_REDIS,
-				'container_name' => GLOBAL_REDIS_CONTAINER,
-				'image'          => 'easyengine/redis:' . $img_versions['easyengine/redis'],
-				'restart'        => 'always',
-				'command'        => '["redis-server", "/usr/local/etc/redis/redis.conf"]',
-				'volumes'        => [
-					'redis_data:/data',
-					'redis_conf:/usr/local/etc/redis',
-					'redis_logs:/var/log/redis',
-				],
-				'networks'       => [
-					'global-backend-network',
-				],
-			],
-		],
-		'created_volumes' => [
+		$data['created_volumes'] = [
 			'external_vols' => [
 				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'certs' ],
 				[ 'prefix' => 'global-nginx-proxy', 'ext_vol_name' => 'dhparam' ],
@@ -262,6 +220,63 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'redis_data' ],
 				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'redis_conf' ],
 				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'redis_logs' ],
+			],
+		];
+
+		if ( empty( EE::docker()::get_volumes_by_label( 'global-nginx-proxy' ) ) ) {
+			EE::docker()::create_volumes( 'global-nginx-proxy', $volumes_nginx_proxy, false );
+		}
+
+		if ( empty( EE::docker()::get_volumes_by_label( GLOBAL_DB ) ) ) {
+			EE::docker()::create_volumes( GLOBAL_DB, $volumes_db, false );
+		}
+
+		if ( empty( EE::docker()::get_volumes_by_label( GLOBAL_REDIS ) ) ) {
+			EE::docker()::create_volumes( GLOBAL_REDIS, $volumes_redis, false );
+		}
+	}
+
+	$data['services'] = [
+		[
+			'name'           => 'global-nginx-proxy',
+			'container_name' => EE_PROXY_TYPE,
+			'image'          => 'easyengine/nginx-proxy:' . $img_versions['easyengine/nginx-proxy'],
+			'restart'        => 'always',
+			'ports'          => [
+				"$config_80_port:80",
+				"$config_443_port:443",
+			],
+			'environment'    => [
+				'LOCAL_USER_ID=' . posix_geteuid(),
+				'LOCAL_GROUP_ID=' . posix_getegid(),
+			],
+			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_nginx_proxy ),
+			'networks'       => [
+				'global-frontend-network',
+			],
+		],
+		[
+			'name'           => GLOBAL_DB,
+			'container_name' => GLOBAL_DB_CONTAINER,
+			'image'          => 'easyengine/mariadb:' . $img_versions['easyengine/mariadb'],
+			'restart'        => 'always',
+			'environment'    => [
+				'MYSQL_ROOT_PASSWORD=' . \EE\Utils\random_password(),
+			],
+			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_db ),
+			'networks'       => [
+				'global-backend-network',
+			],
+		],
+		[
+			'name'           => GLOBAL_REDIS,
+			'container_name' => GLOBAL_REDIS_CONTAINER,
+			'image'          => 'easyengine/redis:' . $img_versions['easyengine/redis'],
+			'restart'        => 'always',
+			'command'        => '["redis-server", "/usr/local/etc/redis/redis.conf"]',
+			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_redis ),
+			'networks'       => [
+				'global-backend-network',
 			],
 		],
 	];

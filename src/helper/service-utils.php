@@ -39,7 +39,6 @@ function nginx_proxy_check() {
 
 		$fs = new Filesystem();
 
-		create_global_volumes();
 
 		if ( ! $fs->exists( EE_ROOT_DIR . '/services/docker-compose.yml' ) ) {
 			generate_global_docker_compose_yml( $fs );
@@ -76,7 +75,6 @@ function init_global_container( $service, $container = '' ) {
 		chdir( EE_ROOT_DIR . '/services' );
 
 		if ( empty( EE::docker()::get_volumes_by_label( $service ) ) ) {
-			create_global_volumes();
 		}
 
 		EE::docker()::boot_container( $container, 'docker-compose up -d ' . $service );
@@ -105,9 +103,11 @@ function boot_global_networks() {
 }
 
 /**
- * Function to create all necessary volumes for global containers.
+ * Generates global docker-compose.yml at EE_ROOT_DIR
+ *
+ * @param Filesystem $fs Filesystem object to write file.
  */
-function create_global_volumes() {
+function generate_global_docker_compose_yml( Filesystem $fs ) {
 
 	$volumes = [
 		[
@@ -180,14 +180,6 @@ function create_global_volumes() {
 	if ( empty( EE::docker()::get_volumes_by_label( GLOBAL_REDIS ) ) ) {
 		EE::docker()::create_volumes( GLOBAL_REDIS, $volumes_redis, false );
 	}
-}
-
-/**
- * Generates global docker-compose.yml at EE_ROOT_DIR
- *
- * @param Filesystem $fs Filesystem object to write file.
- */
-function generate_global_docker_compose_yml( Filesystem $fs ) {
 
 	$img_versions    = EE\Utils\get_image_versions();
 	$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', 80 );

@@ -72,6 +72,10 @@ function init_global_container( $service, $container = '' ) {
 
 	if ( 'running' !== EE::docker()::container_status( $container ) ) {
 		chdir( EE_ROOT_DIR . '/services' );
+		$db_conf_file = EE_ROOT_DIR . '/services/mariadb/conf/my.cnf';
+		if ( IS_DARWIN && GLOBAL_DB === $service && ! $fs->exists( $db_conf_file ) ) {
+			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $db_conf_file );
+		}
 		EE::docker()::boot_container( $container, 'docker-compose up -d ' . $service );
 	} else {
 		EE::log( "$service: Service already running" );
@@ -169,14 +173,13 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 			'container_path'  => '/etc/mysql',
 			'skip_darwin'     => true,
 		],
-		// TODO: Add config file creation for Darwin.
-		// [
-		// 	'name'            => 'db_conf',
-		// 	'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/conf/my.cnf',
-		// 	'container_path'  => '/etc/mysql/my.cnf',
-		// 	'skip_linux'      => true,
-		// 	'skip_volume'     => true,
-		// ],
+		[
+			'name'            => 'db_conf',
+			'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/conf/my.cnf',
+			'container_path'  => '/etc/mysql/my.cnf',
+			'skip_linux'      => true,
+			'skip_volume'     => true,
+		],
 		[
 			'name'            => 'db_logs',
 			'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/logs',

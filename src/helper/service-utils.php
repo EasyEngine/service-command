@@ -40,14 +40,15 @@ function nginx_proxy_check() {
 
 		$fs = new Filesystem();
 
-		if ( ! $fs->exists( EE_ROOT_DIR . '/services/docker-compose.yml' ) ) {
+		if ( ! $fs->exists( EE_SERVICE_DIR . '/docker-compose.yml' ) ) {
 			generate_global_docker_compose_yml( $fs );
 		}
 
 		boot_global_networks();
-		if ( ! EE::docker()::docker_compose_up( EE_ROOT_DIR . '/services', [ 'global-nginx-proxy' ] ) ) {
+		if ( ! EE::docker()::docker_compose_up( EE_SERVICE_DIR . '', [ 'global-nginx-proxy' ] ) ) {
 			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
+		set_nginx_proxy_version_conf();
 	}
 }
 
@@ -66,13 +67,14 @@ function init_global_container( $service, $container = '' ) {
 
 	$fs = new Filesystem();
 
-	if ( ! $fs->exists( EE_ROOT_DIR . '/services/docker-compose.yml' ) ) {
+	if ( ! $fs->exists( EE_SERVICE_DIR . '/docker-compose.yml' ) ) {
 		generate_global_docker_compose_yml( $fs );
 	}
 
 	if ( 'running' !== EE::docker()::container_status( $container ) ) {
-		chdir( EE_ROOT_DIR . '/services' );
-		$db_conf_file = EE_ROOT_DIR . '/services/mariadb/conf/my.cnf';
+
+		chdir( EE_SERVICE_DIR . '' );
+		$db_conf_file = EE_SERVICE_DIR . '/mariadb/conf/my.cnf';
 		if ( IS_DARWIN && GLOBAL_DB === $service && ! $fs->exists( $db_conf_file ) ) {
 			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $db_conf_file );
 		}
@@ -115,42 +117,42 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 	$volumes_nginx_proxy = [
 		[
 			'name'            => 'certs',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/certs',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/certs',
 			'container_path'  => '/etc/nginx/certs',
 		],
 		[
 			'name'            => 'dhparam',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/dhparam',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/dhparam',
 			'container_path'  => '/etc/nginx/dhparam',
 		],
 		[
 			'name'            => 'confd',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/conf.d',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/conf.d',
 			'container_path'  => '/etc/nginx/conf.d',
 		],
 		[
 			'name'            => 'htpasswd',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/htpasswd',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/htpasswd',
 			'container_path'  => '/etc/nginx/htpasswd',
 		],
 		[
 			'name'            => 'vhostd',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/vhost.d',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/vhost.d',
 			'container_path'  => '/etc/nginx/vhost.d',
 		],
 		[
 			'name'            => 'html',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/html',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/html',
 			'container_path'  => '/usr/share/nginx/html',
 		],
 		[
 			'name'            => 'nginx_proxy_logs',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/logs',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/logs',
 			'container_path'  => '/var/log/nginx',
 		],
 		[
 			'name'            => 'nginx_proxy_logs',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/nginx-proxy/logs',
+			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/logs',
 			'container_path'  => '/var/log/nginx',
 		],
 		[
@@ -164,44 +166,44 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 	$volumes_db    = [
 		[
 			'name'            => 'db_data',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/data',
+			'path_to_symlink' => EE_SERVICE_DIR . '/mariadb/data',
 			'container_path'  => '/var/lib/mysql',
 		],
 		[
 			'name'            => 'db_conf',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/conf',
+			'path_to_symlink' => EE_SERVICE_DIR . '/mariadb/conf',
 			'container_path'  => '/etc/mysql',
 			'skip_darwin'     => true,
 		],
 		[
 			'name'            => 'db_conf',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/conf/my.cnf',
+			'path_to_symlink' => EE_SERVICE_DIR . '/mariadb/conf/my.cnf',
 			'container_path'  => '/etc/mysql/my.cnf',
 			'skip_linux'      => true,
 			'skip_volume'     => true,
 		],
 		[
 			'name'            => 'db_logs',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/mariadb/logs',
+			'path_to_symlink' => EE_SERVICE_DIR . '/mariadb/logs',
 			'container_path'  => '/var/log/mysql',
 		],
 	];
 	$volumes_redis = [
 		[
 			'name'            => 'redis_data',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/redis/data',
+			'path_to_symlink' => EE_SERVICE_DIR . '/redis/data',
 			'container_path'  => '/data',
 			'skip_darwin'     => true,
 		],
 		[
 			'name'            => 'redis_conf',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/redis/conf',
+			'path_to_symlink' => EE_SERVICE_DIR . '/redis/conf',
 			'container_path'  => '/usr/local/etc/redis',
 			'skip_darwin'     => true,
 		],
 		[
 			'name'            => 'redis_logs',
-			'path_to_symlink' => EE_ROOT_DIR . '/services/redis/logs',
+			'path_to_symlink' => EE_SERVICE_DIR . '/redis/logs',
 			'container_path'  => '/var/log/redis',
 		],
 	];
@@ -285,5 +287,25 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 	];
 
 	$contents = EE\Utils\mustache_render( SERVICE_TEMPLATE_ROOT . '/global_docker_compose.yml.mustache', $data );
-	$fs->dumpFile( EE_ROOT_DIR . '/services/docker-compose.yml', $contents );
+	$fs->dumpFile( EE_SERVICE_DIR . '/docker-compose.yml', $contents );
+}
+
+/**
+ * Function to set nginx-proxy version.conf file.
+ */
+function set_nginx_proxy_version_conf() {
+
+	if ( 'running' !== EE::docker()::container_status( EE_PROXY_TYPE ) ) {
+		return;
+	}
+	chdir( EE_SERVICE_DIR );
+	$version_line    = sprintf( 'add_header X-Powered-By \"EasyEngine v%s\";', EE_VERSION );
+	$version_file    = '/version.conf';
+	$version_success = EE::exec( sprintf( 'docker-compose exec global-nginx-proxy bash -c \'echo "%s" > %s\'', $version_line, $version_file ), false, false, [
+		$version_file,
+		$version_line,
+	] );
+	if ( $version_success ) {
+		EE::exec( 'docker-compose exec global-nginx-proxy bash -c "nginx -t && nginx -s reload"' );
+	}
 }

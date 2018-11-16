@@ -26,15 +26,14 @@ class Service_Command extends EE_Command {
 	/**
 	 * Service_Command constructor.
 	 *
-	 * Changes directory to EE_ROOT_DIR since that's where all docker-compose commands will be executed
+	 * Changes directory to EE_SERVICE_DIR since that's where all docker-compose commands will be executed
 	 */
 	public function __construct() {
 
-		$services_path = EE_ROOT_DIR . '/services';
-		if ( ! is_dir( $services_path ) ) {
-			mkdir( $services_path );
+		if ( ! is_dir( EE_SERVICE_DIR ) ) {
+			mkdir( EE_SERVICE_DIR );
 		}
-		chdir( $services_path );
+		chdir( EE_SERVICE_DIR );
 
 	}
 

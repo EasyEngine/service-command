@@ -28,10 +28,6 @@ if ( ! defined( 'GLOBAL_REDIS_CONTAINER' ) ) {
 	define( 'GLOBAL_REDIS_CONTAINER', 'ee-global-redis' );
 }
 
-if ( ! defined( 'EE_SERVICE_DIR' ) ) {
-	define( 'EE_SERVICE_DIR', EE_ROOT_DIR . '/services' );
-}
-
 if ( ! class_exists( 'EE' ) ) {
 	return;
 }

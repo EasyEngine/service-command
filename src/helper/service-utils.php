@@ -114,6 +114,15 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 	$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', 80 );
 	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', 443 );
 
+	$fs         = new Filesystem();
+	$backup_yml = EE_BACKUP_DIR . '/services/docker-compose.yml.backup';
+	$password   = '';
+	if ( $fs->exists( $backup_yml ) ) {
+		$launch   = EE::launch( sprintf( 'cat %s | grep MYSQL_ROOT_PASSWORD | cut -d"=" -f2', $backup_yml ) );
+		$password = trim( $launch->stdout );
+	}
+	$password = empty( $password ) ? \EE\Utils\random_password() : $password;
+
 	$volumes_nginx_proxy = [
 		[
 			'name'            => 'certs',
@@ -266,7 +275,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 			'image'          => 'easyengine/mariadb:' . $img_versions['easyengine/mariadb'],
 			'restart'        => 'always',
 			'environment'    => [
-				'MYSQL_ROOT_PASSWORD=' . \EE\Utils\random_password(),
+				'MYSQL_ROOT_PASSWORD=' . $password,
 			],
 			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_db ),
 			'networks'       => [

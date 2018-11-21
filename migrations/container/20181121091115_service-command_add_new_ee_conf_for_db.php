@@ -51,7 +51,7 @@ class AddNewEeConfForDb extends Base {
 		$backup_ee_conf = EE_BACKUP_DIR . '/mariadb/conf/conf.d/ee.cnf';
 
 		$this->fs->mkdir( dirname( $backup_ee_conf ) );
-		$download_url = 'https://raw.githubusercontent.com/EasyEngine/dockerfiles/059116031df049855df07d0e2050882a9c1cfa92/mariadb/ee.cnf';
+		$download_url = 'https://raw.githubusercontent.com/EasyEngine/dockerfiles/v4.0.0/mariadb/ee.cnf';
 		$headers      = [];
 		$options      = [
 			'timeout'  => 600,  // 10 minutes ought to be enough for everybody.

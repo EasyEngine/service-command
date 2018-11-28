@@ -1,6 +1,7 @@
 <?php
 
 use Symfony\Component\Filesystem\Filesystem;
+use EE\Service\Utils as Service_Utils;
 
 /**
  * Manages global services of EasyEngine.
@@ -56,9 +57,9 @@ class Service_Command extends EE_Command {
 		$container = "ee-$service";
 
 		if ( EE_PROXY_TYPE === $container ) {
-			\EE\Service\Utils\nginx_proxy_check();
+			Service_Utils\nginx_proxy_check();
 		} else {
-			\EE\Service\Utils\init_global_container( $service );
+			Service_Utils\init_global_container( $service );
 		}
 
 	}

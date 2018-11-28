@@ -16,7 +16,7 @@ function nginx_proxy_check() {
 	$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', '80' );
 	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', '443' );
 
-	if ( 'running' === EE::docker()::container_status( $proxy_type ) ) {
+	if ( 'running' === \EE_DOCKER::container_status( $proxy_type ) ) {
 		$launch_80_test  = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\' ee-global-nginx-proxy' );
 		$launch_443_test = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "443/tcp") 0).HostPort }}\' ee-global-nginx-proxy' );
 
@@ -45,7 +45,7 @@ function nginx_proxy_check() {
 		}
 
 		boot_global_networks();
-		if ( ! EE::docker()::docker_compose_up( EE_SERVICE_DIR . '', [ 'global-nginx-proxy' ] ) ) {
+		if ( ! \EE_DOCKER::docker_compose_up( EE_SERVICE_DIR . '', [ 'global-nginx-proxy' ] ) ) {
 			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
 		set_nginx_proxy_version_conf();
@@ -71,14 +71,14 @@ function init_global_container( $service, $container = '' ) {
 		generate_global_docker_compose_yml( $fs );
 	}
 
-	if ( 'running' !== EE::docker()::container_status( $container ) ) {
+	if ( 'running' !== \EE_DOCKER::container_status( $container ) ) {
 
 		chdir( EE_SERVICE_DIR . '' );
 		$db_conf_file = EE_SERVICE_DIR . '/mariadb/conf/my.cnf';
 		if ( IS_DARWIN && GLOBAL_DB === $service && ! $fs->exists( $db_conf_file ) ) {
 			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $db_conf_file );
 		}
-		EE::docker()::boot_container( $container, 'docker-compose up -d ' . $service );
+		\EE_DOCKER::boot_container( $container, 'docker-compose up -d ' . $service );
 	} else {
 		EE::log( "$service: Service already running" );
 
@@ -93,12 +93,12 @@ function init_global_container( $service, $container = '' ) {
  * Start required global networks if they don't exist.
  */
 function boot_global_networks() {
-	if ( ! EE::docker()::docker_network_exists( GLOBAL_BACKEND_NETWORK ) &&
-	     ! EE::docker()::create_network( GLOBAL_BACKEND_NETWORK ) ) {
+	if ( ! \EE_DOCKER::docker_network_exists( GLOBAL_BACKEND_NETWORK ) &&
+	     ! \EE_DOCKER::create_network( GLOBAL_BACKEND_NETWORK ) ) {
 		EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
 	}
-	if ( ! EE::docker()::docker_network_exists( GLOBAL_FRONTEND_NETWORK ) &&
-	     ! EE::docker()::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
+	if ( ! \EE_DOCKER::docker_network_exists( GLOBAL_FRONTEND_NETWORK ) &&
+	     ! \EE_DOCKER::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
 		EE::error( 'Unable to create network ' . GLOBAL_FRONTEND_NETWORK );
 	}
 }
@@ -237,16 +237,16 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 			],
 		];
 
-		if ( empty( EE::docker()::get_volumes_by_label( 'global-nginx-proxy' ) ) ) {
-			EE::docker()::create_volumes( 'global-nginx-proxy', $volumes_nginx_proxy, false );
+		if ( empty( \EE_DOCKER::get_volumes_by_label( 'global-nginx-proxy' ) ) ) {
+			\EE_DOCKER::create_volumes( 'global-nginx-proxy', $volumes_nginx_proxy, false );
 		}
 
-		if ( empty( EE::docker()::get_volumes_by_label( GLOBAL_DB ) ) ) {
-			EE::docker()::create_volumes( GLOBAL_DB, $volumes_db, false );
+		if ( empty( \EE_DOCKER::get_volumes_by_label( GLOBAL_DB ) ) ) {
+			\EE_DOCKER::create_volumes( GLOBAL_DB, $volumes_db, false );
 		}
 
-		if ( empty( EE::docker()::get_volumes_by_label( GLOBAL_REDIS ) ) ) {
-			EE::docker()::create_volumes( GLOBAL_REDIS, $volumes_redis, false );
+		if ( empty( \EE_DOCKER::get_volumes_by_label( GLOBAL_REDIS ) ) ) {
+			\EE_DOCKER::create_volumes( GLOBAL_REDIS, $volumes_redis, false );
 		}
 	}
 
@@ -304,7 +304,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
  */
 function set_nginx_proxy_version_conf() {
 
-	if ( 'running' !== EE::docker()::container_status( EE_PROXY_TYPE ) ) {
+	if ( 'running' !== \EE_DOCKER::container_status( EE_PROXY_TYPE ) ) {
 		return;
 	}
 	chdir( EE_SERVICE_DIR );

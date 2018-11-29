@@ -24,7 +24,7 @@ function nginx_proxy_check() {
 			EE::error( "Ports of current running nginx-proxy and ports specified in EasyEngine config file don't match." );
 		}
 
-		return;
+		return false;
 	}
 
 	/**
@@ -50,6 +50,8 @@ function nginx_proxy_check() {
 		}
 		set_nginx_proxy_version_conf();
 	}
+
+	return true;
 }
 
 /**
@@ -79,8 +81,9 @@ function init_global_container( $service, $container = '' ) {
 			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $db_conf_file );
 		}
 		\EE_DOCKER::boot_container( $container, 'docker-compose up -d ' . $service );
+		return true;
 	} else {
-		return;
+		return false;
 	}
 }
 

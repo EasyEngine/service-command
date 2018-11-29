@@ -56,11 +56,19 @@ class Service_Command extends EE_Command {
 		$container = "ee-$service";
 
 		if ( EE_PROXY_TYPE === $container ) {
-			\EE\Service\Utils\nginx_proxy_check();
-			EE::success( 'Service nginx_proxy enabled.' );
+			$service_status = \EE\Service\Utils\nginx_proxy_check();
+			if ( $service_status ) {
+				EE::success( 'Service nginx_proxy enabled.' );
+			} else {
+				EE::Log( 'Notice: Service nginx_proxy already enabled.' );
+			}
 		} else {
-			\EE\Service\Utils\init_global_container( $service );
-			EE::success( sprintf( 'Service %s enabled.', $service ) );
+			$service_status = \EE\Service\Utils\init_global_container( $service );
+			if ( $service_status ) {
+				EE::success( sprintf( 'Service %s enabled.', $service ) );
+			} else {
+				EE::Log( sprintf( 'Notice: Service %s already enabled.', $service ) );
+			}
 		}
 
 	}

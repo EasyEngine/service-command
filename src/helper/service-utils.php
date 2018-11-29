@@ -80,13 +80,8 @@ function init_global_container( $service, $container = '' ) {
 		}
 		\EE_DOCKER::boot_container( $container, 'docker-compose up -d ' . $service );
 	} else {
-		EE::log( "$service: Service already running" );
-
 		return;
 	}
-
-	EE::success( "$container container is up" );
-
 }
 
 /**

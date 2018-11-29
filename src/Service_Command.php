@@ -57,8 +57,10 @@ class Service_Command extends EE_Command {
 
 		if ( EE_PROXY_TYPE === $container ) {
 			\EE\Service\Utils\nginx_proxy_check();
+			EE::success( 'Service nginx_proxy enabled.' );
 		} else {
 			\EE\Service\Utils\init_global_container( $service );
+			EE::success( sprintf( 'Service %s enabled.', $service ) );
 		}
 
 	}
@@ -95,6 +97,7 @@ class Service_Command extends EE_Command {
 	public function disable( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
 		EE::exec( "docker-compose stop $service", true, true );
+		EE::success( sprintf( 'Service %s disabled.', $service ) );
 	}
 
 	/**
@@ -114,6 +117,7 @@ class Service_Command extends EE_Command {
 	public function restart( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
 		EE::exec( "docker-compose restart $service", true, true );
+		EE::success( sprintf( 'Service %s restarted.', $service ) );
 	}
 
 	/**
@@ -135,6 +139,7 @@ class Service_Command extends EE_Command {
 		$command = $this->service_reload_command( $service );
 		if ( $command ) {
 			EE::exec( "docker-compose exec $service $command", true, true );
+			EE::success( sprintf( 'Reloaded %s.', $service ) );
 		} else {
 			EE::warning( "$service can not be reloaded." );
 		}

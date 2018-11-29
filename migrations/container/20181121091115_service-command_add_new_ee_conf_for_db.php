@@ -7,6 +7,7 @@ use EE\Migration\Base;
 use EE\Migration\SiteContainers;
 use EE\RevertableStepProcessor;
 use EE\Model\Site;
+use EE\Utils as EE_Utils;
 
 class AddNewEeConfForDb extends Base {
 
@@ -57,7 +58,7 @@ class AddNewEeConfForDb extends Base {
 			'timeout'  => 600,  // 10 minutes ought to be enough for everybody.
 			'filename' => $backup_ee_conf,
 		];
-		\EE\Utils\http_request( 'GET', $download_url, null, $headers, $options );
+		EE_Utils\http_request( 'GET', $download_url, null, $headers, $options );
 
 		self::$rsp->add_step(
 			'add-new-ee-conf-to-global-db',

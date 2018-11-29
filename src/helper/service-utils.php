@@ -4,6 +4,7 @@ namespace EE\Service\Utils;
 
 use EE;
 use Symfony\Component\Filesystem\Filesystem;
+use EE\Utils as EE_Utils;
 
 /**
  * Boots up the container if it is stopped or not running.
@@ -13,8 +14,8 @@ function nginx_proxy_check() {
 
 	$proxy_type = EE_PROXY_TYPE;
 
-	$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', '80' );
-	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', '443' );
+	$config_80_port  = EE_Utils\get_config_value( 'proxy_80_port', '80' );
+	$config_443_port = EE_Utils\get_config_value( 'proxy_443_port', '443' );
 
 	if ( 'running' === \EE_DOCKER::container_status( $proxy_type ) ) {
 		$launch_80_test  = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\' ee-global-nginx-proxy' );
@@ -30,8 +31,8 @@ function nginx_proxy_check() {
 	/**
 	 * Checking ports.
 	 */
-	$port_80_status  = \EE\Utils\get_curl_info( 'localhost', $config_80_port, true );
-	$port_443_status = \EE\Utils\get_curl_info( 'localhost', $config_443_port, true );
+	$port_80_status  = EE_Utils\get_curl_info( 'localhost', $config_80_port, true );
+	$port_443_status = EE_Utils\get_curl_info( 'localhost', $config_443_port, true );
 
 	// if any/both the port/s is/are occupied.
 	if ( ! ( $port_80_status && $port_443_status ) ) {
@@ -110,9 +111,9 @@ function boot_global_networks() {
  */
 function generate_global_docker_compose_yml( Filesystem $fs ) {
 
-	$img_versions    = EE\Utils\get_image_versions();
-	$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', 80 );
-	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', 443 );
+	$img_versions    = EE_Utils\get_image_versions();
+	$config_80_port  = EE_Utils\get_config_value( 'proxy_80_port', 80 );
+	$config_443_port = EE_Utils\get_config_value( 'proxy_443_port', 443 );
 
 	$fs         = new Filesystem();
 	$backup_yml = EE_BACKUP_DIR . '/services/docker-compose.yml.backup';
@@ -121,7 +122,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		$launch   = EE::launch( sprintf( 'cat %s | grep MYSQL_ROOT_PASSWORD | cut -d"=" -f2', $backup_yml ) );
 		$password = trim( $launch->stdout );
 	}
-	$password = empty( $password ) ? \EE\Utils\random_password() : $password;
+	$password = empty( $password ) ? EE_Utils\random_password() : $password;
 
 	$volumes_nginx_proxy = [
 		[
@@ -295,7 +296,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 	];
 
-	$contents = EE\Utils\mustache_render( SERVICE_TEMPLATE_ROOT . '/global_docker_compose.yml.mustache', $data );
+	$contents = EE_Utils\mustache_render( SERVICE_TEMPLATE_ROOT . '/global_docker_compose.yml.mustache', $data );
 	$fs->dumpFile( EE_SERVICE_DIR . '/docker-compose.yml', $contents );
 }
 

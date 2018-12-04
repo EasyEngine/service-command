@@ -3,6 +3,7 @@
 namespace EE\Service\Utils;
 
 use EE;
+use EE\Model\Option;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -112,14 +113,8 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 	$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', 80 );
 	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', 443 );
 
-	$fs         = new Filesystem();
-	$backup_yml = EE_BACKUP_DIR . '/services/docker-compose.yml.backup';
-	$password   = '';
-	if ( $fs->exists( $backup_yml ) ) {
-		$launch   = EE::launch( sprintf( 'cat %s | grep MYSQL_ROOT_PASSWORD | cut -d"=" -f2', $backup_yml ) );
-		$password = trim( $launch->stdout );
-	}
-	$password = empty( $password ) ? \EE\Utils\random_password() : $password;
+	$db_password = Option::get( GLOBAL_DB );
+	$password    = empty( $db_password ) ? \EE\Utils\random_password() : $db_password;
 
 	$volumes_nginx_proxy = [
 		[

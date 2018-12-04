@@ -25,7 +25,7 @@ class Rc1DbFix extends Base {
 	public function up() {
 
 		if ( 'running' === \EE_DOCKER::container_status( GLOBAL_DB_CONTAINER ) ) {
-			if ( EE::exec( 'docker exec -it ' . GLOBAL_DB_CONTAINER . " bash -c 'mysql -uroot -p\$MYSQL_ROOT_PASSWORD' -e\"exit\"" ) ) {
+			if ( EE::exec( 'docker exec -it ' . GLOBAL_DB_CONTAINER . " bash -c 'mysql -uroot -p\$MYSQL_ROOT_PASSWORD -e\"exit\"'" ) ) {
 				$this->skip_this_migration = true;
 			}
 		}

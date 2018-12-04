@@ -4,7 +4,6 @@ namespace EE\Migration;
 
 use EE;
 use EE\Migration\Base;
-use EE\Model\Site;
 
 class Rc1DbFix extends Base {
 
@@ -13,17 +12,8 @@ class Rc1DbFix extends Base {
 	public function __construct() {
 
 		parent::__construct();
-		$this->sites = Site::all();
-		if ( $this->is_first_execution || ! $this->sites ) {
+		if ( $this->is_first_execution ) {
 			$this->skip_this_migration = true;
-		} else {
-			$this->skip_this_migration = true;
-			foreach ( $this->sites as $site ) {
-				if ( ! empty( $site->db_host ) && 'global-db' === $site->db_host ) {
-					$this->skip_this_migration = false;
-					break;
-				}
-			}
 		}
 	}
 
@@ -38,6 +28,10 @@ class Rc1DbFix extends Base {
 			if ( EE::exec( 'docker exec -it ' . GLOBAL_DB_CONTAINER . " bash -c 'mysql -uroot -p\$MYSQL_ROOT_PASSWORD' -e\"exit\"" ) ) {
 				$this->skip_this_migration = true;
 			}
+		}
+
+		if ( ! $this->fs->exists( EE_SERVICE_DIR . '/docker-compose.yml' ) ) {
+			$this->skip_this_migration = true;
 		}
 
 		if ( $this->skip_this_migration ) {

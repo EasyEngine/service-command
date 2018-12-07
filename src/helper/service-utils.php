@@ -288,6 +288,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 	];
 
+	Option::set( GLOBAL_DB, $password );
 	$contents = EE\Utils\mustache_render( SERVICE_TEMPLATE_ROOT . '/global_docker_compose.yml.mustache', $data );
 	$fs->dumpFile( EE_SERVICE_DIR . '/docker-compose.yml', $contents );
 }

@@ -264,7 +264,6 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 		[
 			'name'           => GLOBAL_DB,
-			'container_name' => GLOBAL_DB_CONTAINER,
 			'image'          => 'easyengine/mariadb:' . $img_versions['easyengine/mariadb'],
 			'restart'        => 'always',
 			'environment'    => [

@@ -63,7 +63,7 @@ function nginx_proxy_check() {
 function init_global_container( $service, $container = '' ) {
 
 	if ( empty( $container ) ) {
-		$container = 'ee-' . $service;
+		$container = 'services_' . $service . '_1';
 	}
 
 	boot_global_networks();

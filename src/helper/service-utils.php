@@ -153,11 +153,6 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 			'container_path'  => '/var/log/nginx',
 		],
 		[
-			'name'            => 'nginx_proxy_logs',
-			'path_to_symlink' => EE_SERVICE_DIR . '/nginx-proxy/logs',
-			'container_path'  => '/var/log/nginx',
-		],
-		[
 			'name'            => '/var/run/docker.sock',
 			'path_to_symlink' => '/var/run/docker.sock',
 			'container_path'  => '/tmp/docker.sock:ro',

@@ -46,7 +46,6 @@ class ChangeGlobalServiceContainerNames extends Base {
 			}
 		}
 
-
 		/**
 		 * Backup old docker-compose file.
 		 */
@@ -95,10 +94,10 @@ class ChangeGlobalServiceContainerNames extends Base {
 		 * Start nginx-proxy container.
 		 */
 		self::$rsp->add_step(
-			'start-nginx-proxy-containers',
-			'EE\Service\Utils\nginx_proxy_check',
+			'start-renamed-containers',
+			'EE\Migration\ChangeGlobalServiceContainerNames::start_global_service_containers',
 			'EE\Migration\ChangeGlobalServiceContainerNames::stop_default_containers',
-			null,
+			[ $running_containers ],
 			null
 		);
 
@@ -106,15 +105,15 @@ class ChangeGlobalServiceContainerNames extends Base {
 		 * Start other service containers.
 		 */
 		self::$rsp->add_step(
-			'start-other-service-containers',
-			'EE\Migration\ChangeGlobalServiceContainerNames::start_other_service_containers',
+			'remove-support-containers',
+			'EE\Migration\GlobalContainers::disable_support_containers',
 			null,
-			[ $running_containers ],
+			null,
 			null
 		);
 
 		if ( ! self::$rsp->execute() ) {
-			throw new \Exception( 'Unable run update-index migrations.' );
+			throw new \Exception( 'Unable run change-global-service-container-name migrations.' );
 		}
 
 	}
@@ -127,6 +126,12 @@ class ChangeGlobalServiceContainerNames extends Base {
 	public function down() {
 	}
 
+	/**
+	 * Restore docker-compose.yml and start old ee-containers.
+	 *
+	 * @param $source string path of source file.
+	 * @param $destination string path of destination.
+	 */
 	public static function restore_yml_file( $source, $destination ) {
 		EE\Migration\SiteContainers::backup_restore( $source, $destination );
 
@@ -135,6 +140,13 @@ class ChangeGlobalServiceContainerNames extends Base {
 		EE::exec( 'docker-compose up -d' );
 	}
 
+	/**
+	 * Remove running global ee-containers.
+	 *
+	 * @param $containers array of running global containers.
+	 *
+	 * @throws \Exception
+	 */
 	public static function remove_global_ee_containers( $containers ) {
 		$removable_containers = implode( ' ', $containers );
 		if ( ! EE::exec( "docker rm -f $removable_containers" ) ) {
@@ -142,6 +154,11 @@ class ChangeGlobalServiceContainerNames extends Base {
 		}
 	}
 
+	/**
+	 * Stop default global containers.
+	 *
+	 * @throws \Exception
+	 */
 	public static function stop_default_containers() {
 
 		chdir( EE_SERVICE_DIR );
@@ -151,7 +168,14 @@ class ChangeGlobalServiceContainerNames extends Base {
 		}
 	}
 
-	public static function start_other_service_containers( $containers ) {
+	/**
+	 * Start global services with renamed containers names.
+	 *
+	 * @param $containers array of running global containers.
+	 *
+	 * @throws \Exception
+	 */
+	public static function start_global_service_containers( $containers ) {
 
 		foreach ( $containers as $container ) {
 			$service = ltrim( $container, 'ee-' );
@@ -159,4 +183,6 @@ class ChangeGlobalServiceContainerNames extends Base {
 		}
 
 	}
+
+
 }

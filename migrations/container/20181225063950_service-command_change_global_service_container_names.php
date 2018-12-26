@@ -37,12 +37,12 @@ class ChangeGlobalServiceContainerNames extends Base {
 		/**
 		 * Sites wp-config changes for global-cache.
 		 */
-		$cache_sites = EE\Model\Site::find( 'global-redis', 'cache_host' );
+		$cache_sites = EE\Model\Site::where( 'cache_host', 'global-redis' );
 		foreach ( $cache_sites as $site ) {
 
 			self::$rsp->add_step(
 				sprintf( 'update-cache-host-%s', $site->site_url ),
-				'EE\Migration\SiteContainers::backup_restore',
+				'EE\Migration\ChangeGlobalServiceContainerNames::update_cache_host',
 				null,
 				[ $site ],
 				null

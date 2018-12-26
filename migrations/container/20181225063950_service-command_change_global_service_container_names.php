@@ -53,10 +53,10 @@ class ChangeGlobalServiceContainerNames extends Base {
 		$global_compose_file_path        = EE_ROOT_DIR . '/services/docker-compose.yml';
 		$global_compose_file_backup_path = EE_BACKUP_DIR . '/services/docker-compose.yml.backup';
 
-		$old_containers = ['ee-global-nginx-proxy', 'ee-global-redis', 'ee-global-db'];
+		$old_containers = [ 'ee-global-nginx-proxy', 'ee-global-redis', 'ee-global-db' ];
 
 		$running_containers = [];
-		foreach (  $old_containers as $container) {
+		foreach ( $old_containers as $container ) {
 			if ( 'running' === \EE_DOCKER::container_status( $container ) ) {
 				$running_containers[] = $container;
 			}
@@ -145,7 +145,7 @@ class ChangeGlobalServiceContainerNames extends Base {
 	/**
 	 * Restore docker-compose.yml and start old ee-containers.
 	 *
-	 * @param $source string path of source file.
+	 * @param $source      string path of source file.
 	 * @param $destination string path of destination.
 	 */
 	public static function restore_yml_file( $source, $destination ) {
@@ -211,7 +211,7 @@ class ChangeGlobalServiceContainerNames extends Base {
 		$update_hostname_constant = "docker-compose exec --user='www-data' php wp config set RT_WP_NGINX_HELPER_REDIS_HOSTNAME global-redis --add=true --type=constant";
 		$redis_plugin_constant    = 'docker-compose exec --user=\'www-data\' php wp config set --type=variable redis_server "array(\'host\'=> \'global-redis\',\'port\'=> 6379,)" --raw';
 
-		if( ! chdir( $site_info->site_fs_path ) ) {
+		if ( ! chdir( $site_info->site_fs_path ) ) {
 			throw new \Exception( sprintf( '%s path not exists', $site_info->site_fs_path ) );
 		}
 

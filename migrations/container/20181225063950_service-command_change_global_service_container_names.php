@@ -70,7 +70,7 @@ class ChangeGlobalServiceContainerNames extends Base {
 			'EE\Migration\SiteContainers::backup_restore',
 			'EE\Migration\ChangeGlobalServiceContainerNames::restore_yml_file',
 			[ $global_compose_file_path, $global_compose_file_backup_path ],
-			[ $global_compose_file_backup_path, $global_compose_file_path ]
+			[ $global_compose_file_backup_path, $global_compose_file_path, $running_containers ]
 		);
 
 		/**
@@ -147,13 +147,18 @@ class ChangeGlobalServiceContainerNames extends Base {
 	 *
 	 * @param $source      string path of source file.
 	 * @param $destination string path of destination.
+	 * @param $containers  array of running containers.
+	 *
+	 * @throws \Exception
 	 */
-	public static function restore_yml_file( $source, $destination ) {
+	public static function restore_yml_file( $source, $destination, $containers ) {
 		EE\Migration\SiteContainers::backup_restore( $source, $destination );
-
 		chdir( EE_SERVICE_DIR );
 
-		EE::exec( 'docker-compose up -d' );
+		$running_containers = implode( ' ', $containers );
+		if ( ! EE::exec( sprintf( 'docker-compose up -d %s', $running_containers ) ) ) {
+			throw new \Exception( 'Unable to start ee-containers' );
+		}
 	}
 
 	/**

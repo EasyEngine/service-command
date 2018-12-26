@@ -217,6 +217,8 @@ class ChangeGlobalServiceContainerNames extends Base {
 		if ( ! EE::exec( $update_hostname_constant ) ) {
 			throw new \Exception( sprintf( 'Unable to update cache host of %s', $site_info->site_url ) );
 		}
+
+		EE::log( sprintf( '%s Updated cache-host successfully', $site_info->site_url ) );
 	}
 
 }

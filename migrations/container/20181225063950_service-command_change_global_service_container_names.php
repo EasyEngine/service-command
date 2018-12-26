@@ -107,7 +107,7 @@ class ChangeGlobalServiceContainerNames extends Base {
 		);
 
 		/**
-		 * Start nginx-proxy container.
+		 * Start global container.
 		 */
 		self::$rsp->add_step(
 			'start-renamed-containers',
@@ -118,7 +118,7 @@ class ChangeGlobalServiceContainerNames extends Base {
 		);
 
 		/**
-		 * Start other service containers.
+		 * Disable support containers.
 		 */
 		self::$rsp->add_step(
 			'remove-support-containers',

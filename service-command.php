@@ -9,7 +9,7 @@ if ( ! defined( 'GLOBAL_DB' ) ) {
 }
 
 if ( ! defined( 'GLOBAL_DB_CONTAINER' ) ) {
-	define( 'GLOBAL_DB_CONTAINER', 'ee-global-db' );
+	define( 'GLOBAL_DB_CONTAINER', 'services_global-db_1' );
 }
 
 if ( ! defined( 'GLOBAL_FRONTEND_NETWORK' ) ) {
@@ -25,7 +25,7 @@ if ( ! defined( 'GLOBAL_REDIS' ) ) {
 }
 
 if ( ! defined( 'GLOBAL_REDIS_CONTAINER' ) ) {
-	define( 'GLOBAL_REDIS_CONTAINER', 'ee-global-redis' );
+	define( 'GLOBAL_REDIS_CONTAINER', 'services_global-redis_1' );
 }
 
 if ( ! class_exists( 'EE' ) ) {

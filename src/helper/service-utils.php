@@ -18,8 +18,8 @@ function nginx_proxy_check() {
 	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', '443' );
 
 	if ( 'running' === \EE_DOCKER::container_status( $proxy_type ) ) {
-		$launch_80_test  = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\' ee-global-nginx-proxy' );
-		$launch_443_test = EE::launch( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "443/tcp") 0).HostPort }}\' ee-global-nginx-proxy' );
+		$launch_80_test  = EE::launch( sprintf( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "80/tcp") 0).HostPort }}\' %s', EE_PROXY_TYPE ) );
+		$launch_443_test = EE::launch( sprintf( 'docker inspect --format \'{{ (index (index .NetworkSettings.Ports "443/tcp") 0).HostPort }}\' %s', EE_PROXY_TYPE ) );
 
 		if ( $config_80_port !== trim( $launch_80_test->stdout ) || $config_443_port !== trim( $launch_443_test->stdout ) ) {
 			EE::error( "Ports of current running nginx-proxy and ports specified in EasyEngine config file don't match." );
@@ -63,7 +63,7 @@ function nginx_proxy_check() {
 function init_global_container( $service, $container = '' ) {
 
 	if ( empty( $container ) ) {
-		$container = 'ee-' . $service;
+		$container = 'services_' . $service . '_1';
 	}
 
 	boot_global_networks();
@@ -259,7 +259,6 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 		[
 			'name'           => GLOBAL_DB,
-			'container_name' => GLOBAL_DB_CONTAINER,
 			'image'          => 'easyengine/mariadb:' . $img_versions['easyengine/mariadb'],
 			'restart'        => 'always',
 			'environment'    => [
@@ -272,7 +271,6 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 		[
 			'name'           => GLOBAL_REDIS,
-			'container_name' => GLOBAL_REDIS_CONTAINER,
 			'image'          => 'easyengine/redis:' . $img_versions['easyengine/redis'],
 			'restart'        => 'always',
 			'command'        => '["redis-server", "/usr/local/etc/redis/redis.conf"]',

@@ -48,15 +48,15 @@ class Rc1DbFix extends Base {
 		chdir( EE_SERVICE_DIR );
 
 		EE::exec( 'docker-compose rm --stop --force global-db' );
-		EE::exec( 'docker-compose run -d --name=ee-global-db global-db --skip-grant-tables' );
+		EE::exec( sprintf( 'docker-compose run -d --name=%s global-db --skip-grant-tables', GLOBAL_DB_CONTAINER ) );
 		$health_script  = 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e"exit"';
 		$db_script_path = \EE\Utils\get_temp_dir() . 'db_exec';
 		file_put_contents( $db_script_path, $health_script );
 		$mysql_unhealthy = true;
-		EE::exec( sprintf( 'docker cp %s ee-global-db:/db_exec', $db_script_path ) );
+		EE::exec( sprintf( 'docker cp %s %s:/db_exec', $db_script_path, GLOBAL_DB_CONTAINER ) );
 		$count = 0;
 		while ( $mysql_unhealthy ) {
-			$mysql_unhealthy = ! EE::exec( 'docker exec ee-global-db sh db_exec' );
+			$mysql_unhealthy = ! EE::exec( sprintf( 'docker exec %s sh db_exec', GLOBAL_DB_CONTAINER ) );
 			if ( $count ++ > 60 ) {
 				break;
 			}
@@ -66,9 +66,9 @@ class Rc1DbFix extends Base {
 		$reset_script   = "FLUSH PRIVILEGES;\nALTER USER 'root'@'localhost' IDENTIFIED BY '$password';";
 		$db_script_path = \EE\Utils\get_temp_dir() . 'db_exec';
 		file_put_contents( $db_script_path, $reset_script );
-		EE::exec( sprintf( 'docker cp %s ee-global-db:/db_exec', $db_script_path ) );
-		EE::exec( 'docker exec ee-global-db bash -c "mysql < db_exec"' );
-		EE::exec( 'docker rm -f ee-global-db' );
+		EE::exec( sprintf( 'docker cp %s %s:/db_exec', $db_script_path, GLOBAL_DB_CONTAINER ) );
+		EE::exec( sprintf( 'docker exec %s bash -c "mysql < db_exec"', GLOBAL_DB_CONTAINER ) );
+		EE::exec( sprintf( 'docker rm -f %s', GLOBAL_DB_CONTAINER ) );
 		EE::exec( 'docker-compose up -d global-db' );
 	}
 
@@ -79,7 +79,7 @@ class Rc1DbFix extends Base {
 	 */
 	public function down() {
 		chdir( EE_SERVICE_DIR );
-		EE::exec( 'docker rm -f ee-global-db' );
+		EE::exec( sprintf( 'docker rm -f %s', GLOBAL_DB_CONTAINER ) );
 		EE::exec( 'docker-compose up -d global-db' );
 	}
 }

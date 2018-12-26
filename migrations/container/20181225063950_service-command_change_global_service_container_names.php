@@ -39,7 +39,7 @@ class ChangeGlobalServiceContainerNames extends Base {
 
 		$old_containers = ['ee-global-nginx-proxy', 'ee-global-redis', 'ee-global-db'];
 
-		$running_containers = '';
+		$running_containers = [];
 		foreach (  $old_containers as $container) {
 			if ( 'running' === \EE_DOCKER::container_status( $container ) ) {
 				$running_containers[] = $container;

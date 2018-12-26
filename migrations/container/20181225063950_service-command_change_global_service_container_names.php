@@ -32,8 +32,24 @@ class ChangeGlobalServiceContainerNames extends Base {
 		}
 
 		EE::debug( 'Starting change-global-service-container-name' );
-
 		self::$rsp = new EE\RevertableStepProcessor();
+
+		/**
+		 * Sites wp-config changes for global-cache.
+		 */
+		$cache_sites = EE\Model\Site::find( 'global-redis', 'cache_host' );
+		foreach ( $cache_sites as $site ) {
+
+			self::$rsp->add_step(
+				sprintf( 'update-cache-host-%s', $site->site_url ),
+				'EE\Migration\SiteContainers::backup_restore',
+				null,
+				[ $site ],
+				null
+			);
+
+		}
+
 		$global_compose_file_path        = EE_ROOT_DIR . '/services/docker-compose.yml';
 		$global_compose_file_backup_path = EE_BACKUP_DIR . '/services/docker-compose.yml.backup';
 
@@ -184,5 +200,23 @@ class ChangeGlobalServiceContainerNames extends Base {
 
 	}
 
+	/**
+	 * Update redis cache host name.
+	 *
+	 * @param $site_info EE\Model\Site site information.
+	 *
+	 * @throws \Exception
+	 */
+	public static function update_cache_host( $site_info ) {
+		$update_hostname_constant = "docker-compose exec --user='www-data' php wp config set RT_WP_NGINX_HELPER_REDIS_HOSTNAME global-redis --add=true --type=constant";
+
+		if( ! chdir( $site_info->site_fs_path ) ) {
+			throw new \Exception( sprintf( '%s path not exists', $site_info->site_fs_path ) );
+		}
+
+		if ( ! EE::exec( $update_hostname_constant ) ) {
+			throw new \Exception( sprintf( 'Unable to update cache host of %s', $site_info->site_url ) );
+		}
+	}
 
 }

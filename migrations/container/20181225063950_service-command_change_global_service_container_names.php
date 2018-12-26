@@ -156,12 +156,35 @@ class ChangeGlobalServiceContainerNames extends Base {
 			);
 
 			if ( $site['site_enabled'] ) {
+
+				/**
+				 * Enable support containers.
+				 */
+				self::$rsp->add_step(
+					sprintf( 'enable-support-containers-%s', $site['site_url'] ),
+					'EE\Migration\SiteContainers::enable_support_containers',
+					'EE\Migration\SiteContainers::disable_support_containers',
+					[ $site['site_url'], $site['site_fs_path'] ],
+					[ $site['site_url'], $site['site_fs_path'] ]
+				);
+
 				self::$rsp->add_step(
 					"upgrade-${site['site_url']}-containers",
 					'EE\Migration\SiteContainers::enable_default_containers',
 					null,
 					[ $site, $ee_site_object ],
 					null
+				);
+
+				/**
+				 * Disable support containers.
+				 */
+				self::$rsp->add_step(
+					sprintf( 'disable-support-containers-%s', $site['site_url'] ),
+					'EE\Migration\SiteContainers::disable_support_containers',
+					'EE\Migration\SiteContainers::enable_support_containers',
+					[ $site['site_url'], $site['site_fs_path'] ],
+					[ $site['site_url'], $site['site_fs_path'] ]
 				);
 			}
 		}

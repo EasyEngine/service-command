@@ -128,6 +128,44 @@ class ChangeGlobalServiceContainerNames extends Base {
 			null
 		);
 
+		/**
+		 * Update site's docker-compose.yml
+		 */
+		$db    = new \EE_DB();
+		$sites = ( $db->table( 'sites' )->all() );
+
+		foreach ( $sites as $site ) {
+			$docker_yml        = $site['site_fs_path'] . '/docker-compose.yml';
+			$docker_yml_backup = EE_BACKUP_DIR . '/' . $site['site_url'] . '/docker-compose.yml.backup';
+			$ee_site_object    = SiteContainers::get_site_object( $site['site_type'] );
+
+			self::$rsp->add_step(
+				"take-${site['site_url']}-docker-compose-backup",
+				'EE\Migration\SiteContainers::backup_restore',
+				'EE\Migration\SiteContainers::backup_restore',
+				[ $docker_yml, $docker_yml_backup ],
+				[ $docker_yml_backup, $docker_yml ]
+			);
+
+			self::$rsp->add_step(
+				"generate-${site['site_url']}-docker-compose",
+				'EE\Migration\SiteContainers::generate_site_docker_compose_file',
+				null,
+				[ $site, $ee_site_object ],
+				null
+			);
+
+			if ( $site['site_enabled'] ) {
+				self::$rsp->add_step(
+					"upgrade-${site['site_url']}-containers",
+					'EE\Migration\SiteContainers::enable_default_containers',
+					null,
+					[ $site, $ee_site_object ],
+					null
+				);
+			}
+		}
+
 		if ( ! self::$rsp->execute() ) {
 			throw new \Exception( 'Unable run change-global-service-container-name migrations.' );
 		}

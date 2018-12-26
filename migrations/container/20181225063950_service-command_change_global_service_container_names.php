@@ -209,6 +209,7 @@ class ChangeGlobalServiceContainerNames extends Base {
 	 */
 	public static function update_cache_host( $site_info ) {
 		$update_hostname_constant = "docker-compose exec --user='www-data' php wp config set RT_WP_NGINX_HELPER_REDIS_HOSTNAME global-redis --add=true --type=constant";
+		$redis_plugin_constant    = 'docker-compose exec --user=\'www-data\' php wp config set --type=variable redis_server "array(\'host\'=> global-redis,\'port\'=> 6379,)" --raw';
 
 		if( ! chdir( $site_info->site_fs_path ) ) {
 			throw new \Exception( sprintf( '%s path not exists', $site_info->site_fs_path ) );
@@ -218,6 +219,9 @@ class ChangeGlobalServiceContainerNames extends Base {
 			throw new \Exception( sprintf( 'Unable to update cache host of %s', $site_info->site_url ) );
 		}
 
+		if ( ! EE::exec( $redis_plugin_constant ) ) {
+			throw new \Exception( sprintf( 'Unable to update plugin constant %s', $site_info->site_url ) );
+		}
 		EE::log( sprintf( '%s Updated cache-host successfully', $site_info->site_url ) );
 	}
 

@@ -37,11 +37,15 @@ class ChangeGlobalServiceContainerNames extends Base {
 		/**
 		 * Sites wp-config changes for global-cache.
 		 */
-		$cache_sites = EE\Model\Site::where( 'cache_host', 'global-redis' );
+		$cache_sites = EE::db()
+			->table( 'sites' )
+			->where( [ [ 'site_type', '==', 'wp' ], [ 'cache_host', '==', 'global-redis' ] ] )
+			->all();
+
 		foreach ( $cache_sites as $site ) {
 
 			self::$rsp->add_step(
-				sprintf( 'update-cache-host-%s', $site->site_url ),
+				sprintf( 'update-cache-host-%s', $site['site_url'] ),
 				'EE\Migration\ChangeGlobalServiceContainerNames::update_cache_host',
 				null,
 				[ $site ],
@@ -277,7 +281,7 @@ class ChangeGlobalServiceContainerNames extends Base {
 	/**
 	 * Update redis cache host name.
 	 *
-	 * @param $site_info EE\Model\Site site information.
+	 * @param $site_info array of site information.
 	 *
 	 * @throws \Exception
 	 */
@@ -285,18 +289,18 @@ class ChangeGlobalServiceContainerNames extends Base {
 		$update_hostname_constant = "docker-compose exec --user='www-data' php wp config set RT_WP_NGINX_HELPER_REDIS_HOSTNAME global-redis --add=true --type=constant";
 		$redis_plugin_constant    = 'docker-compose exec --user=\'www-data\' php wp config set --type=variable redis_server "array(\'host\'=> \'global-redis\',\'port\'=> 6379,)" --raw';
 
-		if ( ! chdir( $site_info->site_fs_path ) ) {
-			throw new \Exception( sprintf( '%s path not exists', $site_info->site_fs_path ) );
+		if ( ! chdir( $site_info['site_fs_path'] ) ) {
+			throw new \Exception( sprintf( '%s path not exists', $site_info['site_fs_path'] ) );
 		}
 
 		if ( ! EE::exec( $update_hostname_constant ) ) {
-			throw new \Exception( sprintf( 'Unable to update cache host of %s', $site_info->site_url ) );
+			throw new \Exception( sprintf( 'Unable to update cache host of %s', $site_info['site_url'] ) );
 		}
 
 		if ( ! EE::exec( $redis_plugin_constant ) ) {
-			throw new \Exception( sprintf( 'Unable to update plugin constant %s', $site_info->site_url ) );
+			throw new \Exception( sprintf( 'Unable to update plugin constant %s', $site_info['site_url'] ) );
 		}
-		EE::log( sprintf( '%s Updated cache-host successfully', $site_info->site_url ) );
+		EE::log( sprintf( '%s Updated cache-host successfully', $site_info['site_url'] ) );
 	}
 
 }

@@ -216,8 +216,16 @@ class ChangeGlobalServiceContainerNames extends Base {
 		EE\Migration\SiteContainers::backup_restore( $source, $destination );
 		chdir( EE_SERVICE_DIR );
 
-		$running_containers = implode( ' ', $containers );
-		if ( ! EE::exec( sprintf( 'docker-compose up -d %s', $running_containers ) ) ) {
+		if ( empty( $containers ) ) {
+			return;
+		}
+
+		$services = '';
+		foreach ( $containers as $container ) {
+			$services .= ltrim( $container, 'ee-' ) . ' ';
+		}
+
+		if ( ! EE::exec( sprintf( 'docker-compose up -d %s', $services ) ) ) {
 			throw new \Exception( 'Unable to start ee-containers' );
 		}
 	}

@@ -26,12 +26,12 @@ ee service
 
 
 
-### ee service start
+### ee service enable
 
 Starts global services.
 
 ~~~
-ee service start <service-name>
+ee service enable <service-name>
 ~~~
 
 **OPTIONS**
@@ -39,20 +39,30 @@ ee service start <service-name>
 	<service-name>
 		Name of service.
 
+**EXAMPLES**
+
+    # Enable global service
+    $ ee service enable nginx-proxy
 
 
-### ee service stop
+
+### ee service disable
 
 Stops global services.
 
 ~~~
-ee service stop <service-name>
+ee service disable <service-name>
 ~~~
 
 **OPTIONS**
 
 	<service-name>
 		Name of service.
+
+**EXAMPLES**
+
+    # Disable global service
+    $ ee service disable nginx-proxy
 
 
 
@@ -69,6 +79,11 @@ ee service restart <service-name>
 	<service-name>
 		Name of service.
 
+**EXAMPLES**
+
+    # Restart global service
+    $ ee service restart nginx-proxy
+
 
 
 ### ee service reload
@@ -84,12 +99,16 @@ ee service reload <service-name>
 	<service-name>
 		Name of service.
 
+**EXAMPLES**
+
+    # Reload global service
+    $ ee service reload nginx-proxy
+
 ## Contributing
 
 We appreciate you taking the initiative to contribute to this project.
 
 Contributing isn’t limited to just code. We encourage you to contribute in the way that best fits your abilities, by writing tutorials, giving a demo at your local meetup, helping other users with their support questions, or revising our documentation.
-
 
 ### Reporting a bug
 

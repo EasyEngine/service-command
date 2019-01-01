@@ -56,10 +56,19 @@ volumes:
   {{/external_vols}}
 {{/created_volumes}}
 
+{{#network}}
 networks:
-  global-frontend-network:
-    external:
-      name: ee-global-frontend-network
-  global-backend-network:
-    external:
-      name: ee-global-backend-network
+  {{#global_networks}}
+  {{name}}:
+    name: {{global_network_name}}
+    {{#global_network_labels}}
+    labels:
+    {{#global_network_label}}
+      - "{{.}}"
+    {{/global_network_label}}
+    ipam:
+      config:
+      - subnet: '{{subnet_ip}}'
+    {{/global_network_labels}}
+  {{/global_networks}}
+{{/network}}

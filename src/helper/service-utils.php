@@ -5,6 +5,7 @@ namespace EE\Service\Utils;
 use EE;
 use EE\Model\Option;
 use Symfony\Component\Filesystem\Filesystem;
+use function EE\Site\Utils\get_subnet_ip;
 
 /**
  * Boots up the container if it is stopped or not running.
@@ -45,7 +46,6 @@ function nginx_proxy_check() {
 			generate_global_docker_compose_yml( $fs );
 		}
 
-		boot_global_networks();
 		if ( ! \EE_DOCKER::docker_compose_up( EE_SERVICE_DIR . '', [ 'global-nginx-proxy' ] ) ) {
 			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
@@ -66,8 +66,6 @@ function init_global_container( $service, $container = '' ) {
 		$container = 'services_' . $service . '_1';
 	}
 
-	boot_global_networks();
-
 	$fs = new Filesystem();
 
 	if ( ! $fs->exists( EE_SERVICE_DIR . '/docker-compose.yml' ) ) {
@@ -82,23 +80,10 @@ function init_global_container( $service, $container = '' ) {
 			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $db_conf_file );
 		}
 		\EE_DOCKER::boot_container( $container, 'docker-compose up -d ' . $service );
+
 		return true;
 	} else {
 		return false;
-	}
-}
-
-/**
- * Start required global networks if they don't exist.
- */
-function boot_global_networks() {
-	if ( ! \EE_DOCKER::docker_network_exists( GLOBAL_BACKEND_NETWORK ) &&
-	     ! \EE_DOCKER::create_network( GLOBAL_BACKEND_NETWORK ) ) {
-		EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
-	}
-	if ( ! \EE_DOCKER::docker_network_exists( GLOBAL_FRONTEND_NETWORK ) &&
-	     ! \EE_DOCKER::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
-		EE::error( 'Unable to create network ' . GLOBAL_FRONTEND_NETWORK );
 	}
 }
 
@@ -258,25 +243,50 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 			],
 		],
 		[
-			'name'           => GLOBAL_DB,
-			'image'          => 'easyengine/mariadb:' . $img_versions['easyengine/mariadb'],
-			'restart'        => 'always',
-			'environment'    => [
+			'name'        => GLOBAL_DB,
+			'image'       => 'easyengine/mariadb:' . $img_versions['easyengine/mariadb'],
+			'restart'     => 'always',
+			'environment' => [
 				'MYSQL_ROOT_PASSWORD=' . $password,
 			],
-			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_db ),
-			'networks'       => [
+			'volumes'     => \EE_DOCKER::get_mounting_volume_array( $volumes_db ),
+			'networks'    => [
 				'global-backend-network',
 			],
 		],
 		[
-			'name'           => GLOBAL_REDIS,
-			'image'          => 'easyengine/redis:' . $img_versions['easyengine/redis'],
-			'restart'        => 'always',
-			'command'        => '["redis-server", "/usr/local/etc/redis/redis.conf"]',
-			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_redis ),
-			'networks'       => [
+			'name'     => GLOBAL_REDIS,
+			'image'    => 'easyengine/redis:' . $img_versions['easyengine/redis'],
+			'restart'  => 'always',
+			'command'  => '["redis-server", "/usr/local/etc/redis/redis.conf"]',
+			'volumes'  => \EE_DOCKER::get_mounting_volume_array( $volumes_redis ),
+			'networks' => [
 				'global-backend-network',
+			],
+		],
+	];
+
+	$frontend_ip     = get_subnet_ip();
+	$backend_ip      = get_subnet_ip();
+	$data['network'] = [
+		[
+			'global_networks' => [
+				[
+					'name'                  => 'global-frontend-network',
+					'global_network_name'   => 'ee-global-frontend-network',
+					'global_network_labels' => [
+						'global_network_label' => 'org.label-schema.vendor=EasyEngine',
+					],
+					'subnet_ip'             => $frontend_ip,
+				],
+				[
+					'name'                  => 'global-backend-network',
+					'global_network_name'   => 'ee-global-backend-network',
+					'global_network_labels' => [
+						'global_network_label' => 'org.label-schema.vendor=EasyEngine',
+					],
+					'subnet_ip'             => $backend_ip,
+				],
 			],
 		],
 	];

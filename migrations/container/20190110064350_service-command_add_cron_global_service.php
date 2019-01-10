@@ -38,7 +38,7 @@ class AddCronGlobalService extends Base {
 		$global_compose_file_path        = EE_ROOT_DIR . '/services/docker-compose.yml';
 		$global_compose_file_backup_path = EE_BACKUP_DIR . '/services/docker-compose.yml.backup';
 
-		$old_container = 'running' !== \EE_DOCKER::container_status( 'ee-cron-scheduler' );
+		$old_container = 'running' === \EE_DOCKER::container_status( 'ee-cron-scheduler' );
 
 		/**
 		 * Backup old docker-compose file.

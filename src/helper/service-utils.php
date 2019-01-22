@@ -4,6 +4,7 @@ namespace EE\Service\Utils;
 
 use EE;
 use EE\Model\Option;
+use EE\Model\ConfigHash;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -50,6 +51,12 @@ function nginx_proxy_check() {
 			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
 		set_nginx_proxy_version_conf();
+
+		// Get service config files.
+		$files = ConfigHash::get_files_in_path( EE_SERVICE_DIR . DIRECTORY_SEPARATOR . 'nginx-proxy' );
+
+		// Create entries for nignx configuration files.
+		ConfigHash::insert_hash_data( $files, 'global-nginx-proxy' );
 	}
 
 	return true;
@@ -82,6 +89,19 @@ function init_global_container( $service, $container = '' ) {
 			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $db_conf_file );
 		}
 		\EE_DOCKER::boot_container( $container, 'docker-compose up -d ' . $service );
+
+		// Get service config files.
+		if ( GLOBAL_DB === $service ) {
+			$files = ConfigHash::get_files_in_path( EE_SERVICE_DIR . DIRECTORY_SEPARATOR . 'mariadb' );
+		} elseif ( GLOBAL_REDIS === $service ) {
+			$files = ConfigHash::get_files_in_path( EE_SERVICE_DIR . DIRECTORY_SEPARATOR . 'redis' );
+		} else {
+			$files = ConfigHash::get_files_in_path( EE_SERVICE_DIR . DIRECTORY_SEPARATOR . $service );
+		}
+
+		// Create entries for service configuration files.
+		ConfigHash::insert_hash_data( $files, $service );
+
 		return true;
 	} else {
 		return false;

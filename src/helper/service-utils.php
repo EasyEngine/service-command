@@ -62,29 +62,42 @@ function nginx_proxy_check() {
  */
 function init_global_container( $service, $container = '' ) {
 
+	$config_80_port  = \EE\Utils\get_config_value( 'proxy_80_port', '80' );
+	$config_443_port = \EE\Utils\get_config_value( 'proxy_443_port', '443' );
+
 	if ( empty( $container ) ) {
 		$container = 'services_' . $service . '_1';
 	}
+	/**
+	 * Checking ports.
+	 */
+	$port_80_status  = \EE\Utils\get_curl_info( 'localhost', $config_80_port, true );
+	$port_443_status = \EE\Utils\get_curl_info( 'localhost', $config_443_port, true );
 
-	boot_global_networks();
-
-	$fs = new Filesystem();
-
-	if ( ! $fs->exists( EE_SERVICE_DIR . '/docker-compose.yml' ) ) {
-		generate_global_docker_compose_yml( $fs );
-	}
-
-	if ( 'running' !== \EE_DOCKER::container_status( $container ) ) {
-
-		chdir( EE_SERVICE_DIR . '' );
-		$db_conf_file = EE_SERVICE_DIR . '/mariadb/conf/my.cnf';
-		if ( IS_DARWIN && GLOBAL_DB === $service && ! $fs->exists( $db_conf_file ) ) {
-			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $db_conf_file );
-		}
-		\EE_DOCKER::boot_container( $container, 'docker-compose up -d ' . $service );
-		return true;
+	// if any/both the port/s is/are occupied.
+	if ( ! ( $port_80_status && $port_443_status ) ) {
+		EE::error( "Cannot create/start proxy container. Please make sure port $config_80_port and $config_443_port are free." );
 	} else {
-		return false;
+		boot_global_networks();
+
+		$fs = new Filesystem();
+
+		if ( ! $fs->exists( EE_SERVICE_DIR . '/docker-compose.yml' ) ) {
+			generate_global_docker_compose_yml( $fs );
+		}
+
+		if ( 'running' !== \EE_DOCKER::container_status( $container ) ) {
+
+			chdir( EE_SERVICE_DIR . '' );
+			$db_conf_file = EE_SERVICE_DIR . '/mariadb/conf/my.cnf';
+			if ( IS_DARWIN && GLOBAL_DB === $service && ! $fs->exists( $db_conf_file ) ) {
+				$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $db_conf_file );
+			}
+			\EE_DOCKER::boot_container( $container, 'docker-compose up -d ' . $service );
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
 

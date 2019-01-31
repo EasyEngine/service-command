@@ -53,7 +53,7 @@ class Service_Command extends EE_Command {
 	 */
 	public function enable( $args, $assoc_args ) {
 		$service   = $this->filter_service( $args );
-		$container = "ee-$service";
+		$container = 'services_' . $service . '_1';
 
 		if ( EE_PROXY_TYPE === $container ) {
 			$service_status = \EE\Service\Utils\nginx_proxy_check();

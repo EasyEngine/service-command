@@ -21,6 +21,7 @@ class Service_Command extends EE_Command {
 		'nginx-proxy',
 		'db',
 		'redis',
+		'newrelic-daemon',
 	];
 
 	/**

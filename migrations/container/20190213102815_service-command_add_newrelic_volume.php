@@ -4,6 +4,7 @@ namespace EE\Migration;
 
 use EE;
 use EE\Migration\Base;
+use function EE\Service\Utils\generate_global_docker_compose_yml;
 
 class AddNewrelicVolume extends Base {
 
@@ -37,6 +38,8 @@ class AddNewrelicVolume extends Base {
 		--label "io.easyengine.site=global-newrelic-daemon" \
 		global-newrelic-daemon_newrelic_sock' );
 
+		// Re-Generate the global docker-compose.yml.
+		generate_global_docker_compose_yml( $this->fs );
 	}
 
 	/**

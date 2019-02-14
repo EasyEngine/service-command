@@ -28,6 +28,10 @@ if ( ! defined( 'GLOBAL_REDIS_CONTAINER' ) ) {
 	define( 'GLOBAL_REDIS_CONTAINER', 'services_global-redis_1' );
 }
 
+if ( ! defined( 'GLOBAL_NEWRELIC_DAEMON' ) ) {
+	define( 'GLOBAL_NEWRELIC_DAEMON', 'global-newrelic-daemon' );
+}
+
 if ( ! class_exists( 'EE' ) ) {
 	return;
 }

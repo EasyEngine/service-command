@@ -205,6 +205,15 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 	];
 
+	$volumes_newrelic = [
+		[
+			'name'            => 'newrelic_sock',
+			'path_to_symlink' => '',
+			'container_path'  => '/run/newrelic',
+			'skip_darwin'     => true,
+		],
+	];
+
 	if ( ! IS_DARWIN ) {
 
 		$data['created_volumes'] = [
@@ -222,6 +231,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'redis_data' ],
 				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'redis_conf' ],
 				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'redis_logs' ],
+				[ 'prefix' => GLOBAL_NEWRELIC_DAEMON, 'ext_vol_name' => 'newrelic_sock' ],
 			],
 		];
 
@@ -235,6 +245,10 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 
 		if ( empty( \EE_DOCKER::get_volumes_by_label( GLOBAL_REDIS ) ) ) {
 			\EE_DOCKER::create_volumes( GLOBAL_REDIS, $volumes_redis, false );
+		}
+
+		if ( empty( \EE_DOCKER::get_volumes_by_label( GLOBAL_NEWRELIC_DAEMON ) ) ) {
+			\EE_DOCKER::create_volumes( GLOBAL_NEWRELIC_DAEMON, $volumes_newrelic, false );
 		}
 	}
 
@@ -258,24 +272,33 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 			],
 		],
 		[
-			'name'           => GLOBAL_DB,
-			'image'          => 'easyengine/mariadb:' . $img_versions['easyengine/mariadb'],
-			'restart'        => 'always',
-			'environment'    => [
+			'name'        => GLOBAL_DB,
+			'image'       => 'easyengine/mariadb:' . $img_versions['easyengine/mariadb'],
+			'restart'     => 'always',
+			'environment' => [
 				'MYSQL_ROOT_PASSWORD=' . $password,
 			],
-			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_db ),
-			'networks'       => [
+			'volumes'     => \EE_DOCKER::get_mounting_volume_array( $volumes_db ),
+			'networks'    => [
 				'global-backend-network',
 			],
 		],
 		[
-			'name'           => GLOBAL_REDIS,
-			'image'          => 'easyengine/redis:' . $img_versions['easyengine/redis'],
-			'restart'        => 'always',
-			'command'        => '["redis-server", "/usr/local/etc/redis/redis.conf"]',
-			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_redis ),
-			'networks'       => [
+			'name'     => GLOBAL_REDIS,
+			'image'    => 'easyengine/redis:' . $img_versions['easyengine/redis'],
+			'restart'  => 'always',
+			'command'  => '["redis-server", "/usr/local/etc/redis/redis.conf"]',
+			'volumes'  => \EE_DOCKER::get_mounting_volume_array( $volumes_redis ),
+			'networks' => [
+				'global-backend-network',
+			],
+		],
+		[
+			'name'     => GLOBAL_NEWRELIC_DAEMON,
+			'image'    => 'easyengine/newrelic-daemon:' . $img_versions['easyengine/newrelic-daemon'],
+			'restart'  => 'always',
+			'volumes'  => \EE_DOCKER::get_mounting_volume_array( $volumes_newrelic ),
+			'networks' => [
 				'global-backend-network',
 			],
 		],

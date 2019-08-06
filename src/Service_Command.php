@@ -44,12 +44,21 @@ class Service_Command extends EE_Command {
 	 * ## OPTIONS
 	 *
 	 * <service-name>
-	 * : Name of service.
+	 * : Name of service - [ nginx-proxy, db, redis, newrelic-daemon ]
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     # Enable global service
 	 *     $ ee service enable nginx-proxy
+	 *
+	 *     # Enable global service
+	 *     $ ee service enable db
+	 *
+	 *     # Enable global service
+	 *     $ ee service enable redis
+	 *
+	 *     # Enable global service
+	 *     $ ee service enable newrelic-daemon
 	 *
 	 */
 	public function enable( $args, $assoc_args ) {
@@ -95,12 +104,21 @@ class Service_Command extends EE_Command {
 	 * ## OPTIONS
 	 *
 	 * <service-name>
-	 * : Name of service.
+	 * : Name of service - [ nginx-proxy, db, redis, newrelic-daemon ]
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     # Disable global service
 	 *     $ ee service disable nginx-proxy
+	 *
+	 *     # Disable global service
+	 *     $ ee service disable db
+	 *
+	 *     # Disable global service
+	 *     $ ee service disable redis
+	 *
+	 *     # Disable global service
+	 *     $ ee service disable newrelic-daemon
 	 *
 	 */
 	public function disable( $args, $assoc_args ) {
@@ -115,13 +133,22 @@ class Service_Command extends EE_Command {
 	 * ## OPTIONS
 	 *
 	 * <service-name>
-	 * : Name of service.
+	 * : Name of service - [ nginx-proxy, db, redis, newrelic-daemon ]
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     # Restart global service
 	 *     $ ee service restart nginx-proxy
 	 *
+	 *     # Restart global service
+	 *     $ ee service restart db
+	 *
+	 *     # Restart global service
+	 *     $ ee service restart redis
+	 *
+	 *     # Restart global service
+	 *     $ ee service restart newrelic-daemon
+	 * 
 	 */
 	public function restart( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
@@ -135,12 +162,21 @@ class Service_Command extends EE_Command {
 	 * ## OPTIONS
 	 *
 	 * <service-name>
-	 * : Name of service.
+	 * : Name of service - [ nginx-proxy, db, redis, newrelic-daemon ]
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     # Reload global service
 	 *     $ ee service reload nginx-proxy
+	 *
+	 *     # Reload global service
+	 *     $ ee service reload db
+	 *
+	 *     # Reload global service
+	 *     $ ee service reload redis
+	 *
+	 *     # Reload global service
+	 *     $ ee service reload newrelic-daemon
 	 *
 	 */
 	public function reload( $args, $assoc_args ) {

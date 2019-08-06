@@ -10,6 +10,15 @@ use Symfony\Component\Filesystem\Filesystem;
  *     # Restarts global nginx proxy service
  *     $ ee service restart nginx-proxy
  *
+ *     # Restarts global nginx proxy service
+ *     $ ee service restart db
+ *
+ *     # Restarts global nginx proxy service
+ *     $ ee service restart redis
+ *
+ *     # Restarts global nginx proxy service
+ *     $ ee service restart newrelic-daemon
+ *
  * @package ee-cli
  */
 class Service_Command extends EE_Command {

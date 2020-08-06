@@ -5,6 +5,7 @@ namespace EE\Service\Utils;
 use EE;
 use EE\Model\Option;
 use Symfony\Component\Filesystem\Filesystem;
+use function EE\Site\Utils\sysctl_parameters;
 
 /**
  * Boots up the container if it is stopped or not running.
@@ -267,6 +268,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'LOCAL_GROUP_ID=' . posix_getegid(),
 			],
 			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_nginx_proxy ),
+			'sysctls'        => sysctl_parameters(),
 			'networks'       => [
 				'global-frontend-network',
 			],
@@ -279,6 +281,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'MYSQL_ROOT_PASSWORD=' . $password,
 			],
 			'volumes'     => \EE_DOCKER::get_mounting_volume_array( $volumes_db ),
+			'sysctls'     => sysctl_parameters(),
 			'networks'    => [
 				'global-backend-network',
 			],
@@ -289,6 +292,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 			'restart'  => 'always',
 			'command'  => '["redis-server", "/usr/local/etc/redis/redis.conf"]',
 			'volumes'  => \EE_DOCKER::get_mounting_volume_array( $volumes_redis ),
+			'sysctls'  => sysctl_parameters(),
 			'networks' => [
 				'global-backend-network',
 			],

@@ -1,7 +1,5 @@
 <?php
 
-use Symfony\Component\Filesystem\Filesystem;
-
 /**
  * Manages global services of EasyEngine.
  *
@@ -132,7 +130,7 @@ class Service_Command extends EE_Command {
 	 */
 	public function disable( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
-		EE::exec( "docker-compose stop $service", true, true );
+		EE::exec( \EE_DOCKER::docker_compose_with_custom() . " stop $service", true, true );
 		EE::success( sprintf( 'Service %s disabled.', $service ) );
 	}
 
@@ -157,11 +155,11 @@ class Service_Command extends EE_Command {
 	 *
 	 *     # Restart global service
 	 *     $ ee service restart newrelic-daemon
-	 * 
+	 *
 	 */
 	public function restart( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
-		EE::exec( "docker-compose restart $service", true, true );
+		EE::exec( \EE_DOCKER::docker_compose_with_custom() . " restart $service", true, true );
 		EE::success( sprintf( 'Service %s restarted.', $service ) );
 	}
 
@@ -192,7 +190,7 @@ class Service_Command extends EE_Command {
 		$service = $this->filter_service( $args );
 		$command = $this->service_reload_command( $service );
 		if ( $command ) {
-			EE::exec( "docker-compose exec $service $command", true, true );
+			EE::exec( \EE_DOCKER::docker_compose_with_custom() . " exec $service $command", true, true );
 			EE::success( sprintf( 'Reloaded %s.', $service ) );
 		} else {
 			EE::warning( "$service can not be reloaded." );

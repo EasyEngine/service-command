@@ -87,7 +87,36 @@ class Service_Command extends EE_Command {
 				EE::Log( sprintf( 'Notice: Service %s already enabled.', $service ) );
 			}
 		}
+	}
 
+	/**
+	 * Re-create global services docker-compose file and update global containers.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Refresh global services
+	 *     $ ee service refresh
+	 */
+	public function refresh( $args, $assoc_args ) {
+
+		$running_services = [];
+		$count            = 0;
+		foreach ( $this->whitelisted_services as $service ) {
+			$running_services[ $count ]['name']  = $service;
+			$launch                              = EE::launch( 'docker-compose ps -q global-' . $service );
+			$running_services[ $count ]['state'] = $launch->stdout;
+			$count++;
+		}
+
+		\EE\Service\Utils\generate_global_docker_compose_yml( new Symfony\Component\Filesystem\Filesystem() );
+
+		foreach ( $running_services as $service ) {
+			if ( ! empty( $service['state'] ) ) {
+				EE::exec( \EE_DOCKER::docker_compose_with_custom() . " up -d global-${service['name']}", true, true );
+			}
+		}
+
+		EE::success( 'Global services refreshed.' );
 	}
 
 	/**

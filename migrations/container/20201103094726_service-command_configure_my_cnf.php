@@ -3,6 +3,7 @@
 namespace EE\Migration;
 
 use EE;
+use \Symfony\Component\Filesystem\Filesystem;
 
 class ConfigureMyCNF extends Base {
 
@@ -39,6 +40,8 @@ class ConfigureMyCNF extends Base {
 
 			EE::exec('rm -f ' . EE_SERVICE_DIR . '/mariadb/conf/mariadb.conf.d/*.cnf' );
 
+			$fs = new Filesystem();
+			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $my_cnf );
 		}
 	}
 

@@ -4,6 +4,7 @@ namespace EE\Migration;
 
 use EE;
 use \Symfony\Component\Filesystem\Filesystem;
+use function EE\Utils\trailingslashit;
 
 class ConfigureMyCNF extends Base {
 
@@ -35,7 +36,7 @@ class ConfigureMyCNF extends Base {
 		$my_cnf = EE_SERVICE_DIR . '/mariadb/conf/my.cnf';
 
 		if ( is_link( $my_cnf ) ) {
-			unlink( readlink( $my_cnf ) );
+			unlink( trailingslashit( dirname( $my_cnf ) ) . readlink( $my_cnf ) );
 			unlink( $my_cnf );
 
 			EE::exec('rm -f ' . EE_SERVICE_DIR . '/mariadb/conf/mariadb.conf.d/*.cnf' );

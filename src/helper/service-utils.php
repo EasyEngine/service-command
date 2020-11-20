@@ -82,7 +82,7 @@ function init_global_container( $service, $container = '' ) {
 		if ( IS_DARWIN && GLOBAL_DB === $service && ! $fs->exists( $db_conf_file ) ) {
 			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $db_conf_file );
 		}
-		\EE_DOCKER::boot_container( $container, 'docker-compose up -d ' . $service );
+		\EE_DOCKER::boot_container( $container, \EE_DOCKER::docker_compose_with_custom() . ' up -d ' . $service );
 		return true;
 	} else {
 		return false;
@@ -324,11 +324,11 @@ function set_nginx_proxy_version_conf() {
 	chdir( EE_SERVICE_DIR );
 	$version_line    = sprintf( 'add_header X-Powered-By \"EasyEngine v%s\";', EE_VERSION );
 	$version_file    = '/version.conf';
-	$version_success = EE::exec( sprintf( 'docker-compose exec global-nginx-proxy bash -c \'echo "%s" > %s\'', $version_line, $version_file ), false, false, [
+	$version_success = EE::exec( sprintf( \EE_DOCKER::docker_compose_with_custom() . ' exec global-nginx-proxy bash -c \'echo "%s" > %s\'', $version_line, $version_file ), false, false, [
 		$version_file,
 		$version_line,
 	] );
 	if ( $version_success ) {
-		EE::exec( 'docker-compose exec global-nginx-proxy bash -c "nginx -t && nginx -s reload"' );
+		EE::exec( \EE_DOCKER::docker_compose_with_custom() . ' exec global-nginx-proxy bash -c "nginx -t && nginx -s reload"' );
 	}
 }

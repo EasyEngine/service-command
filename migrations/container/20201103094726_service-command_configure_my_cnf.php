@@ -44,7 +44,7 @@ class ConfigureMyCNF extends Base {
 			$fs = new Filesystem();
 			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $my_cnf );
 
-			EE::runcommand( 'service restart db' );
+			EE::exec( 'cd ' . EE_SERVICE_DIR . ' && docker-compose restart global-db' );
 		}
 	}
 

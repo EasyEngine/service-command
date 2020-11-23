@@ -28,6 +28,7 @@ class ConfigureMyCNF extends Base {
 
 		if ( $this->skip_this_migration ) {
 			EE::debug( 'Skipping configure-my-cnf migration as it is not needed.' );
+
 			return;
 		}
 
@@ -39,7 +40,7 @@ class ConfigureMyCNF extends Base {
 			unlink( trailingslashit( dirname( $my_cnf ) ) . readlink( $my_cnf ) );
 			unlink( $my_cnf );
 
-			EE::exec('rm -f ' . EE_SERVICE_DIR . '/mariadb/conf/mariadb.conf.d/*.cnf' );
+			EE::exec( 'rm -f ' . EE_SERVICE_DIR . '/mariadb/conf/mariadb.conf.d/*.cnf' );
 
 			$fs = new Filesystem();
 			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $my_cnf );

@@ -47,7 +47,7 @@ class RemoveSysctl extends Base {
 			$running_services[ $count ]['name']  = $service;
 			$launch                              = EE::launch( 'docker-compose ps -q global-' . $service );
 			$running_services[ $count ]['state'] = $launch->stdout;
-			$count++;
+			$count ++;
 		}
 
 		\EE\Service\Utils\generate_global_docker_compose_yml( $this->fs );

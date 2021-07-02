@@ -39,6 +39,12 @@ services:
       - {{.}}
     {{/environment}}
   {{/environment.0}}
+  {{#sysctls}}
+    sysctls:
+    {{#sysctl}}
+      - {{name}}
+    {{/sysctl}}
+  {{/sysctls}}
   {{#networks.0}}
     networks:
     {{#networks}}

@@ -6,6 +6,7 @@ use EE;
 use EE\Model\Option;
 use Symfony\Component\Filesystem\Filesystem;
 use function EE\Site\Utils\get_subnet_ip;
+use function EE\Site\Utils\sysctl_parameters;
 
 /**
  * Boots up the container if it is stopped or not running.
@@ -79,8 +80,7 @@ function init_global_container( $service, $container = '' ) {
 		if ( IS_DARWIN && GLOBAL_DB === $service && ! $fs->exists( $db_conf_file ) ) {
 			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $db_conf_file );
 		}
-		\EE_DOCKER::boot_container( $container, 'docker-compose up -d ' . $service );
-
+		\EE_DOCKER::boot_container( $container, \EE_DOCKER::docker_compose_with_custom() . ' up -d ' . $service );
 		return true;
 	} else {
 		return false;
@@ -190,6 +190,15 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 	];
 
+	$volumes_newrelic = [
+		[
+			'name'            => 'newrelic_sock',
+			'path_to_symlink' => '',
+			'container_path'  => '/run/newrelic',
+			'skip_darwin'     => true,
+		],
+	];
+
 	if ( ! IS_DARWIN ) {
 
 		$data['created_volumes'] = [
@@ -207,6 +216,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'redis_data' ],
 				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'redis_conf' ],
 				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'redis_logs' ],
+				[ 'prefix' => GLOBAL_NEWRELIC_DAEMON, 'ext_vol_name' => 'newrelic_sock' ],
 			],
 		];
 
@@ -220,6 +230,10 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 
 		if ( empty( \EE_DOCKER::get_volumes_by_label( GLOBAL_REDIS ) ) ) {
 			\EE_DOCKER::create_volumes( GLOBAL_REDIS, $volumes_redis, false );
+		}
+
+		if ( empty( \EE_DOCKER::get_volumes_by_label( GLOBAL_NEWRELIC_DAEMON ) ) ) {
+			\EE_DOCKER::create_volumes( GLOBAL_NEWRELIC_DAEMON, $volumes_newrelic, false );
 		}
 	}
 
@@ -238,6 +252,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'LOCAL_GROUP_ID=' . posix_getegid(),
 			],
 			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_nginx_proxy ),
+			'sysctls'        => sysctl_parameters(),
 			'networks'       => [
 				'global-frontend-network',
 			],
@@ -250,6 +265,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'MYSQL_ROOT_PASSWORD=' . $password,
 			],
 			'volumes'     => \EE_DOCKER::get_mounting_volume_array( $volumes_db ),
+			'sysctls'     => sysctl_parameters(),
 			'networks'    => [
 				'global-backend-network',
 			],
@@ -260,6 +276,16 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 			'restart'  => 'always',
 			'command'  => '["redis-server", "/usr/local/etc/redis/redis.conf"]',
 			'volumes'  => \EE_DOCKER::get_mounting_volume_array( $volumes_redis ),
+			'sysctls'  => sysctl_parameters(),
+			'networks' => [
+				'global-backend-network',
+			],
+		],
+		[
+			'name'     => GLOBAL_NEWRELIC_DAEMON,
+			'image'    => 'easyengine/newrelic-daemon:' . $img_versions['easyengine/newrelic-daemon'],
+			'restart'  => 'always',
+			'volumes'  => \EE_DOCKER::get_mounting_volume_array( $volumes_newrelic ),
 			'networks' => [
 				'global-backend-network',
 			],
@@ -307,11 +333,11 @@ function set_nginx_proxy_version_conf() {
 	chdir( EE_SERVICE_DIR );
 	$version_line    = sprintf( 'add_header X-Powered-By \"EasyEngine v%s\";', EE_VERSION );
 	$version_file    = '/version.conf';
-	$version_success = EE::exec( sprintf( 'docker-compose exec global-nginx-proxy bash -c \'echo "%s" > %s\'', $version_line, $version_file ), false, false, [
+	$version_success = EE::exec( sprintf( \EE_DOCKER::docker_compose_with_custom() . ' exec global-nginx-proxy bash -c \'echo "%s" > %s\'', $version_line, $version_file ), false, false, [
 		$version_file,
 		$version_line,
 	] );
 	if ( $version_success ) {
-		EE::exec( 'docker-compose exec global-nginx-proxy bash -c "nginx -t && nginx -s reload"' );
+		EE::exec( \EE_DOCKER::docker_compose_with_custom() . ' exec global-nginx-proxy bash -c "nginx -t && nginx -s reload"' );
 	}
 }

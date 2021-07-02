@@ -243,7 +243,7 @@ class ChangeGlobalServiceContainerNames extends Base {
 	 */
 	public static function remove_global_ee_containers( $containers ) {
 		$removable_containers = implode( ' ', $containers );
-		if ( ! EE::exec( "docker rm -f $removable_containers" ) ) {
+		if ( ! empty( trim( $removable_containers ) ) && ! EE::exec( "docker rm -f $removable_containers" ) ) {
 			throw new \Exception( 'Unable to remove global service containers' );
 		}
 	}

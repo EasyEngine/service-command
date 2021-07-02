@@ -1,7 +1,5 @@
 <?php
 
-use Symfony\Component\Filesystem\Filesystem;
-
 /**
  * Manages global services of EasyEngine.
  *
@@ -9,6 +7,15 @@ use Symfony\Component\Filesystem\Filesystem;
  *
  *     # Restarts global nginx proxy service
  *     $ ee service restart nginx-proxy
+ *
+ *     # Restarts global nginx proxy service
+ *     $ ee service restart db
+ *
+ *     # Restarts global nginx proxy service
+ *     $ ee service restart redis
+ *
+ *     # Restarts global nginx proxy service
+ *     $ ee service restart newrelic-daemon
  *
  * @package ee-cli
  */
@@ -21,6 +28,7 @@ class Service_Command extends EE_Command {
 		'nginx-proxy',
 		'db',
 		'redis',
+		'newrelic-daemon',
 	];
 
 	/**
@@ -43,17 +51,26 @@ class Service_Command extends EE_Command {
 	 * ## OPTIONS
 	 *
 	 * <service-name>
-	 * : Name of service.
+	 * : Name of service - [ nginx-proxy, db, redis, newrelic-daemon ]
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     # Enable global service
 	 *     $ ee service enable nginx-proxy
 	 *
+	 *     # Enable global service
+	 *     $ ee service enable db
+	 *
+	 *     # Enable global service
+	 *     $ ee service enable redis
+	 *
+	 *     # Enable global service
+	 *     $ ee service enable newrelic-daemon
+	 *
 	 */
 	public function enable( $args, $assoc_args ) {
 		$service   = $this->filter_service( $args );
-		$container = "ee-$service";
+		$container = 'services_' . $service . '_1';
 
 		if ( EE_PROXY_TYPE === $container ) {
 			$service_status = \EE\Service\Utils\nginx_proxy_check();
@@ -70,7 +87,36 @@ class Service_Command extends EE_Command {
 				EE::Log( sprintf( 'Notice: Service %s already enabled.', $service ) );
 			}
 		}
+	}
 
+	/**
+	 * Re-create global services docker-compose file and update global containers.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Refresh global services
+	 *     $ ee service refresh
+	 */
+	public function refresh( $args, $assoc_args ) {
+
+		$running_services = [];
+		$count            = 0;
+		foreach ( $this->whitelisted_services as $service ) {
+			$running_services[ $count ]['name']  = $service;
+			$launch                              = EE::launch( 'docker-compose ps -q global-' . $service );
+			$running_services[ $count ]['state'] = $launch->stdout;
+			$count++;
+		}
+
+		\EE\Service\Utils\generate_global_docker_compose_yml( new Symfony\Component\Filesystem\Filesystem() );
+
+		foreach ( $running_services as $service ) {
+			if ( ! empty( $service['state'] ) ) {
+				EE::exec( \EE_DOCKER::docker_compose_with_custom() . " up -d global-${service['name']}", true, true );
+			}
+		}
+
+		EE::success( 'Global services refreshed.' );
 	}
 
 	/**
@@ -94,17 +140,26 @@ class Service_Command extends EE_Command {
 	 * ## OPTIONS
 	 *
 	 * <service-name>
-	 * : Name of service.
+	 * : Name of service - [ nginx-proxy, db, redis, newrelic-daemon ]
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     # Disable global service
 	 *     $ ee service disable nginx-proxy
 	 *
+	 *     # Disable global service
+	 *     $ ee service disable db
+	 *
+	 *     # Disable global service
+	 *     $ ee service disable redis
+	 *
+	 *     # Disable global service
+	 *     $ ee service disable newrelic-daemon
+	 *
 	 */
 	public function disable( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
-		EE::exec( "docker-compose stop $service", true, true );
+		EE::exec( \EE_DOCKER::docker_compose_with_custom() . " stop $service", true, true );
 		EE::success( sprintf( 'Service %s disabled.', $service ) );
 	}
 
@@ -114,17 +169,26 @@ class Service_Command extends EE_Command {
 	 * ## OPTIONS
 	 *
 	 * <service-name>
-	 * : Name of service.
+	 * : Name of service - [ nginx-proxy, db, redis, newrelic-daemon ]
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     # Restart global service
 	 *     $ ee service restart nginx-proxy
 	 *
+	 *     # Restart global service
+	 *     $ ee service restart db
+	 *
+	 *     # Restart global service
+	 *     $ ee service restart redis
+	 *
+	 *     # Restart global service
+	 *     $ ee service restart newrelic-daemon
+	 *
 	 */
 	public function restart( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
-		EE::exec( "docker-compose restart $service", true, true );
+		EE::exec( \EE_DOCKER::docker_compose_with_custom() . " restart $service", true, true );
 		EE::success( sprintf( 'Service %s restarted.', $service ) );
 	}
 
@@ -134,19 +198,28 @@ class Service_Command extends EE_Command {
 	 * ## OPTIONS
 	 *
 	 * <service-name>
-	 * : Name of service.
+	 * : Name of service - [ nginx-proxy, db, redis, newrelic-daemon ]
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     # Reload global service
 	 *     $ ee service reload nginx-proxy
 	 *
+	 *     # Reload global service
+	 *     $ ee service reload db
+	 *
+	 *     # Reload global service
+	 *     $ ee service reload redis
+	 *
+	 *     # Reload global service
+	 *     $ ee service reload newrelic-daemon
+	 *
 	 */
 	public function reload( $args, $assoc_args ) {
 		$service = $this->filter_service( $args );
 		$command = $this->service_reload_command( $service );
 		if ( $command ) {
-			EE::exec( "docker-compose exec $service $command", true, true );
+			EE::exec( \EE_DOCKER::docker_compose_with_custom() . " exec $service $command", true, true );
 			EE::success( sprintf( 'Reloaded %s.', $service ) );
 		} else {
 			EE::warning( "$service can not be reloaded." );

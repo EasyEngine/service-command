@@ -5,8 +5,8 @@ namespace EE\Service\Utils;
 use EE;
 use EE\Model\Option;
 use Symfony\Component\Filesystem\Filesystem;
-use function EE\Site\Utils\get_subnet_ip;
 use function EE\Site\Utils\sysctl_parameters;
+use function EE\Utils\get_config_value;
 
 /**
  * Boots up the container if it is stopped or not running.
@@ -292,8 +292,8 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 	];
 
-	$frontend_ip     = '10.0.0.0/16';
-	$backend_ip      = '10.1.0.0/16';
+	$frontend_subnet_ip     = get_config_value( 'frontend_subnet_ip', '10.0.0.0/16' );
+	$backend_subnet_ip      = get_config_value( 'backend_subnet_ip', '10.1.0.0/16' );
 
 	$data['network'] = [
 		[
@@ -304,7 +304,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 					'global_network_labels' => [
 						'global_network_label' => 'org.label-schema.vendor=EasyEngine',
 					],
-					'subnet_ip'             => $frontend_ip,
+					'subnet_ip'             => $frontend_subnet_ip,
 				],
 				[
 					'name'                  => 'global-backend-network',
@@ -312,7 +312,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 					'global_network_labels' => [
 						'global_network_label' => 'org.label-schema.vendor=EasyEngine',
 					],
-					'subnet_ip'             => $backend_ip,
+					'subnet_ip'             => $backend_subnet_ip,
 				],
 			],
 		],

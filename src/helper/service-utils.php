@@ -292,8 +292,9 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 	];
 
-	$frontend_ip     = get_subnet_ip();
-	$backend_ip      = get_subnet_ip();
+	$frontend_ip     = '10.0.0.0/16';
+	$backend_ip      = '10.1.0.0/16';
+
 	$data['network'] = [
 		[
 			'global_networks' => [

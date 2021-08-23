@@ -6,6 +6,7 @@ use EE;
 use EE\Model\Option;
 use Symfony\Component\Filesystem\Filesystem;
 use function EE\Site\Utils\sysctl_parameters;
+use function EE\Utils\get_config_value;
 
 /**
  * Boots up the container if it is stopped or not running.
@@ -46,7 +47,6 @@ function nginx_proxy_check() {
 			generate_global_docker_compose_yml( $fs );
 		}
 
-		boot_global_networks();
 		if ( ! \EE_DOCKER::docker_compose_up( EE_SERVICE_DIR . '', [ 'global-nginx-proxy' ] ) ) {
 			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
@@ -67,8 +67,6 @@ function init_global_container( $service, $container = '' ) {
 		$container = 'services_' . $service . '_1';
 	}
 
-	boot_global_networks();
-
 	$fs = new Filesystem();
 
 	if ( ! $fs->exists( EE_SERVICE_DIR . '/docker-compose.yml' ) ) {
@@ -86,20 +84,6 @@ function init_global_container( $service, $container = '' ) {
 		return true;
 	} else {
 		return false;
-	}
-}
-
-/**
- * Start required global networks if they don't exist.
- */
-function boot_global_networks() {
-	if ( ! \EE_DOCKER::docker_network_exists( GLOBAL_BACKEND_NETWORK ) &&
-	     ! \EE_DOCKER::create_network( GLOBAL_BACKEND_NETWORK ) ) {
-		EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
-	}
-	if ( ! \EE_DOCKER::docker_network_exists( GLOBAL_FRONTEND_NETWORK ) &&
-	     ! \EE_DOCKER::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
-		EE::error( 'Unable to create network ' . GLOBAL_FRONTEND_NETWORK );
 	}
 }
 
@@ -304,6 +288,32 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 			'volumes'  => \EE_DOCKER::get_mounting_volume_array( $volumes_newrelic ),
 			'networks' => [
 				'global-backend-network',
+			],
+		],
+	];
+
+	$frontend_subnet_ip     = get_config_value( 'frontend_subnet_ip', '10.0.0.0/16' );
+	$backend_subnet_ip      = get_config_value( 'backend_subnet_ip', '10.1.0.0/16' );
+
+	$data['network'] = [
+		[
+			'global_networks' => [
+				[
+					'name'                  => 'global-frontend-network',
+					'global_network_name'   => 'ee-global-frontend-network',
+					'global_network_labels' => [
+						'global_network_label' => 'org.label-schema.vendor=EasyEngine',
+					],
+					'subnet_ip'             => $frontend_subnet_ip,
+				],
+				[
+					'name'                  => 'global-backend-network',
+					'global_network_name'   => 'ee-global-backend-network',
+					'global_network_labels' => [
+						'global_network_label' => 'org.label-schema.vendor=EasyEngine',
+					],
+					'subnet_ip'             => $backend_subnet_ip,
+				],
 			],
 		],
 	];

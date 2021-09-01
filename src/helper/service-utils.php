@@ -89,6 +89,26 @@ function init_global_container( $service, $container = '' ) {
 }
 
 /**
+ * Ensures that frontend and backend networks are initialized.
+ *
+ * @throws EE\ExitException
+ */
+function ensure_global_network_initialized() {
+	$frontend_subnet_ip = Option::get( 'frontend_subnet_ip' );
+	$backend_subnet_ip  = Option::get( 'backend_subnet_ip' );
+
+	if ( empty( $frontend_subnet_ip ) ) {
+		$frontend_subnet_ip = get_available_subnet( 16 );
+		Option::set( 'frontend_subnet_ip', $frontend_subnet_ip );
+	}
+
+	if ( empty( $backend_subnet_ip ) ) {
+		$backend_subnet_ip = get_available_subnet( 16 );
+		Option::set( 'backend_subnet_ip', $backend_subnet_ip );
+	}
+}
+
+/**
  * Generates global docker-compose.yml at EE_ROOT_DIR
  *
  * @param Filesystem $fs Filesystem object to write file.
@@ -102,18 +122,10 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 	$db_password = Option::get( GLOBAL_DB );
 	$password    = empty( $db_password ) ? \EE\Utils\random_password() : $db_password;
 
+	ensure_global_network_initialized();
+
 	$frontend_subnet_ip = Option::get( 'frontend_subnet_ip' );
 	$backend_subnet_ip  = Option::get( 'backend_subnet_ip' );
-
-	if ( empty( $frontend_subnet_ip ) ) {
-		$frontend_subnet_ip = get_available_subnet( 16 );
-		Option::set( 'frontend_subnet_ip', $frontend_subnet_ip );
-	}
-
-	if ( empty( $backend_subnet_ip ) ) {
-		$backend_subnet_ip = get_available_subnet( 16 );
-		Option::set( 'backend_subnet_ip', $backend_subnet_ip );
-	}
 
 	$volumes_nginx_proxy = [
 		[

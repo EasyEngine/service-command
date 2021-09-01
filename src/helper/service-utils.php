@@ -105,8 +105,15 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 	$frontend_subnet_ip = Option::get( 'frontend_subnet_ip' );
 	$backend_subnet_ip  = Option::get( 'backend_subnet_ip' );
 
-	$frontend_subnet_ip = empty( $frontend_subnet_ip ) ? get_available_subnet( 16 ) : $frontend_subnet_ip;
-	$backend_subnet_ip  = empty( $backend_subnet_ip ) ? get_available_subnet( 16 ) : $backend_subnet_ip;
+	if ( empty( $frontend_subnet_ip ) ) {
+		$frontend_subnet_ip = get_available_subnet( 16 );
+		Option::set( 'frontend_subnet_ip', $frontend_subnet_ip );
+	}
+
+	if ( empty( $backend_subnet_ip ) ) {
+		$backend_subnet_ip = get_available_subnet( 16 );
+		Option::set( 'backend_subnet_ip', $backend_subnet_ip );
+	}
 
 	$volumes_nginx_proxy = [
 		[

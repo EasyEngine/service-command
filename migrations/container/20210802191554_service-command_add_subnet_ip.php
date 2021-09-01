@@ -10,7 +10,7 @@ class AddSubnetIp extends Base {
 	public function __construct() {
 
 		parent::__construct();
-		if ( $this->is_first_execution || IS_DARWIN ) {
+		if ( $this->is_first_execution ) {
 			$this->skip_this_migration = true;
 		}
 	}

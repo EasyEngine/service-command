@@ -82,6 +82,7 @@ function init_global_container( $service, $container = '' ) {
 			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $db_conf_file );
 		}
 		\EE_DOCKER::boot_container( $container, \EE_DOCKER::docker_compose_with_custom() . ' up -d ' . $service );
+
 		return true;
 	} else {
 		return false;

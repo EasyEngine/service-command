@@ -28,7 +28,9 @@ class AddSubnetIp extends Base {
 			return;
 		}
 
-		EE::runcommand( 'service refresh' );
+		$service_command = new \Service_Command();
+		$service_command->refresh( [], [] );
+
 		EE::debug( 'Starting add-subnet-ip' );
 	}
 

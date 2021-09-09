@@ -4,8 +4,6 @@ namespace EE\Migration;
 
 use EE;
 use EE\Model\Site;
-use function EE\Service\Utils\generate_global_docker_compose_yml;
-use function EE\Site\Utils\get_site_info;
 
 class AddSubnetIp extends Base {
 

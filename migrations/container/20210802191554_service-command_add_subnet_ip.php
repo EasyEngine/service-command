@@ -43,31 +43,11 @@ class AddSubnetIp extends Base {
 			EE::launch( 'docker network disconnect ' . GLOBAL_FRONTEND_NETWORK . ' ' . $container );
 		}
 
-		// Backup names of all the running containers
-		$running_services = [];
-		$count            = 0;
-		$whitelisted_services = [ 'nginx-proxy', 'db', 'redis' ];
-		chdir( EE_SERVICE_DIR );
+		EE::launch( 'docker network rm ' . GLOBAL_FRONTEND_NETWORK );
+		EE::launch( 'docker network rm ' . GLOBAL_BACKEND_NETWORK );
 
-		foreach ( $whitelisted_services as $service ) {
-			$running_services[ $count ]['name']  = $service;
-			$launch                              = EE::launch( 'docker-compose ps -q global-' . $service );
-			$running_services[ $count ]['state'] = $launch->stdout;
-			$count++;
-		}
-
-		// Remove the containers and (especially) networks
-		EE::launch( 'docker-compose down' );
-
-		\EE\Service\Utils\generate_global_docker_compose_yml( new \Symfony\Component\Filesystem\Filesystem() );
-
-		// Start all the previously running containers
-		foreach ( $running_services as $service ) {
-			if ( ! empty( $service['state'] ) ) {
-				EE::exec( \EE_DOCKER::docker_compose_with_custom() . " up -d global-${service['name']}", true, true );
-			}
-		}
-
+		$service_command = new \Service_Command();
+		$service_command->refresh( [], [] );
 
 		EE::log( 'Reconnecting containers from global backend and frontend networks for network update.' );
 		foreach( $backend_containers as $container ) {

@@ -3,7 +3,9 @@
 namespace EE\Migration;
 
 use EE;
+use EE\Model\Site;
 use function EE\Service\Utils\generate_global_docker_compose_yml;
+use function EE\Site\Utils\get_site_info;
 
 class AddSubnetIp extends Base {
 
@@ -28,36 +30,60 @@ class AddSubnetIp extends Base {
 			return;
 		}
 
-		$backend_containers  = EE::launch( 'docker network inspect -f \'{{ range $key, $value := .Containers }}{{ printf "%s\n" $value.Name}}{{ end }}\' ' . GLOBAL_BACKEND_NETWORK )->stdout;
-		$frontend_containers = EE::launch( 'docker network inspect -f \'{{ range $key, $value := .Containers }}{{ printf "%s\n" $value.Name}}{{ end }}\' ' . GLOBAL_FRONTEND_NETWORK )->stdout;
+		$sites = Site::all();
+		$enabled_sites = [];
 
-		$backend_containers  = explode( "\n", $backend_containers );
-		$frontend_containers = explode( "\n", $frontend_containers );
+		// Disable all site
+		foreach ( $sites as $site ) {
+			$site_type = $site->site_type === 'html' ? new EE\Site\Type\HTML() :
+				( $site->site_type === 'php' ? new EE\Site\Type\PHP() :
+					( $site->site_type === 'wp' ? new EE\Site\Type\WordPress() : EE::error('Unknown site type') ) );
 
-		EE::log( 'Disconnecting containers from global backend and frontend networks for network update.' );
+			if ( $site->site_enabled ) {
+				$enabled_sites[] = [
+					'type' => $site_type,
+					'url' => $site->site_url
+				];
 
-		foreach( $backend_containers as $container ) {
-			EE::launch( 'docker network disconnect ' . GLOBAL_BACKEND_NETWORK . ' ' . $container );
+				$site_type->disable( [ $site->site_url ], [] );
+			}
 		}
-		foreach( $frontend_containers as $container ) {
-			EE::launch( 'docker network disconnect ' . GLOBAL_FRONTEND_NETWORK . ' ' . $container );
+
+		EE\Service\Utils\ensure_global_network_initialized();
+
+		// Backup names of all the running service containers
+		$running_services = [];
+		$count            = 0;
+		$whitelisted_services = [ 'nginx-proxy', 'db', 'redis' ];
+		chdir( EE_SERVICE_DIR );
+
+		foreach ( $whitelisted_services as $service ) {
+			$running_services[ $count ]['name']  = $service;
+			$launch                              = EE::launch( 'docker-compose ps -q global-' . $service );
+			$running_services[ $count ]['state'] = $launch->stdout;
+			$count++;
 		}
 
+		// Remove the service containers and (especially) networks
+		EE::launch( \EE_DOCKER::docker_compose_with_custom() . ' down' );
 		EE::launch( 'docker network rm ' . GLOBAL_FRONTEND_NETWORK );
 		EE::launch( 'docker network rm ' . GLOBAL_BACKEND_NETWORK );
 
-		$service_command = new \Service_Command();
-		$service_command->refresh( [], [] );
+		\EE\Service\Utils\generate_global_docker_compose_yml( new \Symfony\Component\Filesystem\Filesystem() );
 
-		EE::log( 'Reconnecting containers from global backend and frontend networks for network update.' );
-		foreach( $backend_containers as $container ) {
-			EE::launch( 'docker network connect ' . GLOBAL_BACKEND_NETWORK . ' ' . $container );
-		}
-		foreach( $frontend_containers as $container ) {
-			EE::launch( 'docker network connect ' . GLOBAL_FRONTEND_NETWORK . ' ' . $container );
+		// Start all the previously running service containers
+		foreach ( $running_services as $service ) {
+			if ( ! empty( $service['state'] ) ) {
+				EE::exec( \EE_DOCKER::docker_compose_with_custom() . " up -d global-${service['name']}", true, true );
+			}
 		}
 
-		EE::debug( 'Starting add-subnet-ip' );
+		// re-enable sites
+		foreach ( $enabled_sites as $site ) {
+			$site['type']->enable( [ $site['url'] ], [] );
+		}
+
+			EE::debug( 'Starting add-subnet-ip' );
 	}
 
 	/**

@@ -28,19 +28,21 @@ class AddSubnetIp extends Base {
 			return;
 		}
 
-		$sites = Site::all();
+		EE::debug( 'Starting add-subnet-ip' );
+
+		$sites         = Site::all();
 		$enabled_sites = [];
 
 		// Disable all site
 		foreach ( $sites as $site ) {
 			$site_type = $site->site_type === 'html' ? new EE\Site\Type\HTML() :
 				( $site->site_type === 'php' ? new EE\Site\Type\PHP() :
-					( $site->site_type === 'wp' ? new EE\Site\Type\WordPress() : EE::error('Unknown site type') ) );
+					( $site->site_type === 'wp' ? new EE\Site\Type\WordPress() : EE::error( 'Unknown site type' ) ) );
 
 			if ( $site->site_enabled ) {
 				$enabled_sites[] = [
 					'type' => $site_type,
-					'url' => $site->site_url
+					'url'  => $site->site_url
 				];
 
 				$site_type->disable( [ $site->site_url ], [] );
@@ -50,8 +52,8 @@ class AddSubnetIp extends Base {
 		EE\Service\Utils\ensure_global_network_initialized();
 
 		// Backup names of all the running service containers
-		$running_services = [];
-		$count            = 0;
+		$running_services     = [];
+		$count                = 0;
 		$whitelisted_services = [ 'nginx-proxy', 'db', 'redis' ];
 		chdir( EE_SERVICE_DIR );
 
@@ -81,7 +83,6 @@ class AddSubnetIp extends Base {
 			$site['type']->enable( [ $site['url'] ], [] );
 		}
 
-			EE::debug( 'Starting add-subnet-ip' );
 	}
 
 	/**

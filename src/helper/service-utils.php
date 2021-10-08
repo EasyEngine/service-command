@@ -285,6 +285,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 		[
 			'name'        => GLOBAL_DB,
+			'container_name' => GLOBAL_DB_CONTAINER,
 			'image'       => 'easyengine/mariadb:' . $img_versions['easyengine/mariadb'],
 			'restart'     => 'always',
 			'environment' => [
@@ -298,6 +299,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 		[
 			'name'     => GLOBAL_REDIS,
+			'container_name' => GLOBAL_REDIS_CONTAINER,
 			'image'    => 'easyengine/redis:' . $img_versions['easyengine/redis'],
 			'restart'  => 'always',
 			'command'  => '["redis-server", "/usr/local/etc/redis/redis.conf"]',

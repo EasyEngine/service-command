@@ -5,6 +5,8 @@ namespace EE\Service\Utils;
 use EE;
 use EE\Model\Option;
 use Symfony\Component\Filesystem\Filesystem;
+use function EE\Site\Utils\get_next_available_subnet_ip;
+use function EE\Site\Utils\get_available_subnet;
 use function EE\Site\Utils\sysctl_parameters;
 
 /**
@@ -46,7 +48,6 @@ function nginx_proxy_check() {
 			generate_global_docker_compose_yml( $fs );
 		}
 
-		boot_global_networks();
 		if ( ! \EE_DOCKER::docker_compose_up( EE_SERVICE_DIR . '', [ 'global-nginx-proxy' ] ) ) {
 			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
@@ -66,8 +67,6 @@ function init_global_container( $service, $container = '' ) {
 	if ( empty( $container ) ) {
 		$container = 'services_' . $service . '_1';
 	}
-
-	boot_global_networks();
 
 	$fs = new Filesystem();
 
@@ -90,16 +89,22 @@ function init_global_container( $service, $container = '' ) {
 }
 
 /**
- * Start required global networks if they don't exist.
+ * Ensures that frontend and backend networks are initialized.
+ *
+ * @throws EE\ExitException
  */
-function boot_global_networks() {
-	if ( ! \EE_DOCKER::docker_network_exists( GLOBAL_BACKEND_NETWORK ) &&
-	     ! \EE_DOCKER::create_network( GLOBAL_BACKEND_NETWORK ) ) {
-		EE::error( 'Unable to create network ' . GLOBAL_BACKEND_NETWORK );
+function ensure_global_network_initialized() {
+	$frontend_subnet_ip = Option::get( 'frontend_subnet_ip' );
+	$backend_subnet_ip  = Option::get( 'backend_subnet_ip' );
+
+	if ( empty( $frontend_subnet_ip ) ) {
+		$frontend_subnet_ip = get_available_subnet( 16 );
+		Option::set( 'frontend_subnet_ip', $frontend_subnet_ip );
 	}
-	if ( ! \EE_DOCKER::docker_network_exists( GLOBAL_FRONTEND_NETWORK ) &&
-	     ! \EE_DOCKER::create_network( GLOBAL_FRONTEND_NETWORK ) ) {
-		EE::error( 'Unable to create network ' . GLOBAL_FRONTEND_NETWORK );
+
+	if ( empty( $backend_subnet_ip ) ) {
+		$backend_subnet_ip = get_available_subnet( 16 );
+		Option::set( 'backend_subnet_ip', $backend_subnet_ip );
 	}
 }
 
@@ -116,6 +121,11 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 
 	$db_password = Option::get( GLOBAL_DB );
 	$password    = empty( $db_password ) ? \EE\Utils\random_password() : $db_password;
+
+	ensure_global_network_initialized();
+
+	$frontend_subnet_ip = Option::get( 'frontend_subnet_ip' );
+	$backend_subnet_ip  = Option::get( 'backend_subnet_ip' );
 
 	$volumes_nginx_proxy = [
 		[
@@ -275,6 +285,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 		[
 			'name'        => GLOBAL_DB,
+			'container_name' => GLOBAL_DB_CONTAINER,
 			'image'       => 'easyengine/mariadb:' . $img_versions['easyengine/mariadb'],
 			'restart'     => 'always',
 			'environment' => [
@@ -288,6 +299,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 		[
 			'name'     => GLOBAL_REDIS,
+			'container_name' => GLOBAL_REDIS_CONTAINER,
 			'image'    => 'easyengine/redis:' . $img_versions['easyengine/redis'],
 			'restart'  => 'always',
 			'command'  => '["redis-server", "/usr/local/etc/redis/redis.conf"]',
@@ -304,6 +316,29 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 			'volumes'  => \EE_DOCKER::get_mounting_volume_array( $volumes_newrelic ),
 			'networks' => [
 				'global-backend-network',
+			],
+		],
+	];
+
+	$data['network'] = [
+		[
+			'global_networks' => [
+				[
+					'name'                  => 'global-frontend-network',
+					'global_network_name'   => 'ee-global-frontend-network',
+					'global_network_labels' => [
+						'global_network_label' => 'org.label-schema.vendor=EasyEngine',
+					],
+					'subnet_ip'             => $frontend_subnet_ip,
+				],
+				[
+					'name'                  => 'global-backend-network',
+					'global_network_name'   => 'ee-global-backend-network',
+					'global_network_labels' => [
+						'global_network_label' => 'org.label-schema.vendor=EasyEngine',
+					],
+					'subnet_ip'             => $backend_subnet_ip,
+				],
 			],
 		],
 	];

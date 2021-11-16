@@ -4,9 +4,6 @@ services:
 
 {{#services}}
   {{name}}:
-  {{#container_name}}
-    container_name: {{.}}
-  {{/container_name}}
     image: {{image}}
   {{#ports.0}}
     ports:

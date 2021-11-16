@@ -4,9 +4,6 @@ services:
 
 {{#services}}
   {{name}}:
-  {{#container_name}}
-    container_name: {{.}}
-  {{/container_name}}
     image: {{image}}
   {{#ports.0}}
     ports:
@@ -60,8 +57,8 @@ services:
 volumes:
   {{#external_vols}}
   {{ext_vol_name}}:
-    external: true
-    name: {{prefix}}_{{ext_vol_name}}
+    external:
+      name: {{prefix}}_{{ext_vol_name}}
   {{/external_vols}}
 {{/created_volumes}}
 

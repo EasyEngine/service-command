@@ -32,10 +32,6 @@ if ( ! defined( 'GLOBAL_NEWRELIC_DAEMON' ) ) {
 	define( 'GLOBAL_NEWRELIC_DAEMON', 'global-newrelic-daemon' );
 }
 
-if ( ! defined( 'GLOBAL_NEWRELIC_DAEMON_CONTAINER' ) ) {
-	define( 'GLOBAL_NEWRELIC_DAEMON_CONTAINER', 'services_global-newrelic-daemon_1' );
-}
-
 if ( ! class_exists( 'EE' ) ) {
 	return;
 }

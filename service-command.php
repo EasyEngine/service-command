@@ -12,6 +12,10 @@ if ( ! defined( 'GLOBAL_DB_CONTAINER' ) ) {
 	define( 'GLOBAL_DB_CONTAINER', 'services_global-db_1' );
 }
 
+if ( ! defined( 'GLOBAL_PROXY_CONTAINER' ) ) {
+	define( 'GLOBAL_PROXY_CONTAINER', 'services_global-nginx-proxy_1' );
+}
+
 if ( ! defined( 'GLOBAL_FRONTEND_NETWORK' ) ) {
 	define( 'GLOBAL_FRONTEND_NETWORK', 'ee-global-frontend-network' );
 }

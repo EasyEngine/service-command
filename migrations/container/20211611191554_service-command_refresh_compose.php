@@ -35,7 +35,7 @@ class RefreshCompose extends Base {
 		// Backup names of all the running service containers
 		$running_services     = [];
 		$count                = 0;
-		$whitelisted_services = [ 'nginx-proxy', 'db', 'redis' ];
+		$whitelisted_services = [ 'nginx-proxy', 'db', 'redis', 'newrelic-daemon' ];
 		chdir( EE_SERVICE_DIR );
 
 		foreach ( $whitelisted_services as $service ) {

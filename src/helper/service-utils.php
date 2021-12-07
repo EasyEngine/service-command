@@ -266,7 +266,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 	$data['services'] = [
 		[
 			'name'           => 'global-nginx-proxy',
-			'container_name' => EE_PROXY_TYPE,
+			'container_name' => GLOBAL_PROXY_CONTAINER,
 			'image'          => 'easyengine/nginx-proxy:' . $img_versions['easyengine/nginx-proxy'],
 			'restart'        => 'always',
 			'ports'          => [

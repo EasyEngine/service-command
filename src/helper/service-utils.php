@@ -316,6 +316,15 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				'global-backend-network',
 			],
 		],
+		[
+			'name'    => EE_CRON_SERVICE,
+			'image'   => 'easyengine/cron:' . $img_versions['easyengine/cron'],
+			'restart' => 'always',
+			'volumes' => [
+				'/opt/easyengine/services/cron:/etc/ofelia:ro',
+				'/var/run/docker.sock:/var/run/docker.sock:ro',
+			],
+		],
 	];
 
 	$data['network'] = [

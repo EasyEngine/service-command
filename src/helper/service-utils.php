@@ -225,6 +225,20 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		],
 	];
 
+	$volumes_cron = [
+		[
+			'name'            => 'cron_conf',
+			'path_to_symlink' => EE_SERVICE_DIR . '/cron/conf',
+			'container_path'  => '/etc/ofelia:ro',
+		],
+		[
+			'name'            => '/var/run/docker.sock',
+			'path_to_symlink' => '/var/run/docker.sock',
+			'container_path'  => '/var/run/docker.sock:ro',
+			'skip_volume'     => true,
+		],
+	];
+
 	if ( ! IS_DARWIN ) {
 
 		$data['created_volumes'] = [
@@ -243,6 +257,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'redis_conf' ],
 				[ 'prefix' => GLOBAL_REDIS, 'ext_vol_name' => 'redis_logs' ],
 				[ 'prefix' => GLOBAL_NEWRELIC_DAEMON, 'ext_vol_name' => 'newrelic_sock' ],
+				[ 'prefix' => GLOBAL_CRON, 'ext_vol_name' => 'cron_conf' ],
 			],
 		];
 
@@ -260,6 +275,10 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 
 		if ( empty( \EE_DOCKER::get_volumes_by_label( GLOBAL_NEWRELIC_DAEMON ) ) ) {
 			\EE_DOCKER::create_volumes( GLOBAL_NEWRELIC_DAEMON, $volumes_newrelic, false );
+		}
+
+		if ( empty( \EE_DOCKER::get_volumes_by_label( GLOBAL_CRON ) ) ) {
+			\EE_DOCKER::create_volumes( GLOBAL_CRON, $volumes_cron, false );
 		}
 	}
 
@@ -315,6 +334,12 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 			'networks' => [
 				'global-backend-network',
 			],
+		],
+		[
+			'name'    => GLOBAL_CRON,
+			'image'   => 'easyengine/cron:' . $img_versions['easyengine/cron'],
+			'restart' => 'always',
+			'volumes' => \EE_DOCKER::get_mounting_volume_array( $volumes_cron ),
 		],
 	];
 

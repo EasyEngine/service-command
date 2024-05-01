@@ -12,6 +12,10 @@ if ( ! defined( 'GLOBAL_DB_CONTAINER' ) ) {
 	define( 'GLOBAL_DB_CONTAINER', 'services_global-db_1' );
 }
 
+if ( ! defined( 'GLOBAL_REDIS_CONTAINER' ) ) {
+	define( 'GLOBAL_REDIS_CONTAINER', 'services_global-redis_1' );
+}
+
 if ( ! defined( 'GLOBAL_CRON' ) ) {
 	define( 'GLOBAL_CRON', 'global-cron' );
 }

@@ -299,47 +299,51 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_nginx_proxy ),
 			'sysctls'        => sysctl_parameters(),
 			'networks'       => [
-				'global-frontend-network',
+				'ee-global-frontend-network',
 			],
 		],
 		[
-			'name'        => GLOBAL_DB,
-			'image'       => 'easyengine/mariadb:' . $img_versions['easyengine/mariadb'],
-			'restart'     => 'always',
-			'environment' => [
+			'name'           => GLOBAL_DB,
+			'container_name' => GLOBAL_DB_CONTAINER,
+			'image'          => 'easyengine/mariadb:' . $img_versions['easyengine/mariadb'],
+			'restart'        => 'always',
+			'environment'    => [
 				'MYSQL_ROOT_PASSWORD=' . $password,
 			],
-			'volumes'     => \EE_DOCKER::get_mounting_volume_array( $volumes_db ),
-			'sysctls'     => sysctl_parameters(),
-			'networks'    => [
-				'global-backend-network',
+			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_db ),
+			'sysctls'        => sysctl_parameters(),
+			'networks'       => [
+				'ee-global-backend-network',
 			],
 		],
 		[
-			'name'     => GLOBAL_REDIS,
-			'image'    => 'easyengine/redis:' . $img_versions['easyengine/redis'],
-			'restart'  => 'always',
-			'command'  => '["redis-server", "/usr/local/etc/redis/redis.conf"]',
-			'volumes'  => \EE_DOCKER::get_mounting_volume_array( $volumes_redis ),
-			'sysctls'  => sysctl_parameters(),
-			'networks' => [
-				'global-backend-network',
+			'name'           => GLOBAL_REDIS,
+			'container_name' => GLOBAL_REDIS_CONTAINER,
+			'image'          => 'easyengine/redis:' . $img_versions['easyengine/redis'],
+			'restart'        => 'always',
+			'command'        => '["redis-server", "/usr/local/etc/redis/redis.conf"]',
+			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_redis ),
+			'sysctls'        => sysctl_parameters(),
+			'networks'       => [
+				'ee-global-backend-network',
 			],
 		],
 		[
-			'name'     => GLOBAL_NEWRELIC_DAEMON,
-			'image'    => 'easyengine/newrelic-daemon:' . $img_versions['easyengine/newrelic-daemon'],
-			'restart'  => 'always',
-			'volumes'  => \EE_DOCKER::get_mounting_volume_array( $volumes_newrelic ),
-			'networks' => [
-				'global-backend-network',
+			'name'           => GLOBAL_NEWRELIC_DAEMON,
+			'container_name' => GLOBAL_NEWRELIC_DAEMON_CONTAINER,
+			'image'          => 'easyengine/newrelic-daemon:' . $img_versions['easyengine/newrelic-daemon'],
+			'restart'        => 'always',
+			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_newrelic ),
+			'networks'       => [
+				'ee-global-backend-network',
 			],
 		],
 		[
-			'name'    => GLOBAL_CRON,
-			'image'   => 'easyengine/cron:' . $img_versions['easyengine/cron'],
-			'restart' => 'always',
-			'volumes' => \EE_DOCKER::get_mounting_volume_array( $volumes_cron ),
+			'name'           => GLOBAL_CRON,
+			'container_name' => GLOBAL_CRON_CONTAINER,
+			'image'          => 'easyengine/cron:' . $img_versions['easyengine/cron'],
+			'restart'        => 'always',
+			'volumes'        => \EE_DOCKER::get_mounting_volume_array( $volumes_cron ),
 		],
 	];
 
@@ -347,7 +351,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 		[
 			'global_networks' => [
 				[
-					'name'                  => 'global-frontend-network',
+					'name'                  => 'ee-global-frontend-network',
 					'global_network_name'   => 'ee-global-frontend-network',
 					'global_network_labels' => [
 						'global_network_label' => 'org.label-schema.vendor=EasyEngine',
@@ -355,7 +359,7 @@ function generate_global_docker_compose_yml( Filesystem $fs ) {
 					'subnet_ip'             => $frontend_subnet_ip,
 				],
 				[
-					'name'                  => 'global-backend-network',
+					'name'                  => 'ee-global-backend-network',
 					'global_network_name'   => 'ee-global-backend-network',
 					'global_network_labels' => [
 						'global_network_label' => 'org.label-schema.vendor=EasyEngine',

@@ -38,9 +38,9 @@ class ChangeGlobalServiceContainerNames extends Base {
 		 * Sites wp-config changes for global-cache.
 		 */
 		$cache_sites = EE::db()
-			->table( 'sites' )
-			->where( [ [ 'site_type', '==', 'wp' ], [ 'cache_host', '==', 'global-redis' ] ] )
-			->all();
+		                 ->table( 'sites' )
+		                 ->where( [ [ 'site_type', '==', 'wp' ], [ 'cache_host', '==', 'global-redis' ] ] )
+		                 ->all();
 
 		foreach ( $cache_sites as $site ) {
 

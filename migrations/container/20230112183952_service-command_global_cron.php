@@ -4,6 +4,7 @@ namespace EE\Migration;
 
 use EE;
 use EE\Migration\Base;
+use Symfony\Component\Filesystem\Filesystem;
 
 class GlobalCron extends Base {
 
@@ -82,16 +83,16 @@ class GlobalCron extends Base {
 			null
 		);
 
-		/**
-		 * Backup old docker-compose file.
-		 */
-		self::$rsp->add_step(
-			'backup-old-cron-config-file',
-			'EE\Migration\SiteContainers::backup_restore',
-			'EE\Migration\GlobalCron::restore_yml_file',
-			[ $old_cron_file_path, $old_cron_file_backup_path ],
-			[ $old_cron_file_backup_path, $old_cron_file_path, $running_containers ]
-		);
+		$fs = new Filesystem();
+		if ( $fs->exists( $old_cron_file_path ) ) {
+			self::$rsp->add_step(
+				'backup-old-cron-config-file',
+				'EE\Migration\SiteContainers::backup_restore',
+				'EE\Migration\GlobalCron::restore_yml_file',
+				[ $old_cron_file_path, $old_cron_file_backup_path ],
+				[ $old_cron_file_backup_path, $old_cron_file_path, $running_containers ]
+			);
+		}
 
 		/**
 		 * Start global container.

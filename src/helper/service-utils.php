@@ -51,6 +51,21 @@ function nginx_proxy_check() {
 		if ( ! \EE_DOCKER::docker_compose_up( EE_SERVICE_DIR . '', [ 'global-nginx-proxy' ] ) ) {
 			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
+
+		$this->certs_dir = EE_ROOT_DIR . '/services/nginx-proxy/certs';
+		$this->key_path  = $this->certs_dir . '/default.key';
+		$this->crt_path  = $this->certs_dir . '/default.crt';
+
+		if ( $this->fs->exists( $this->key_path ) && $this->fs->exists( $this->crt_path ) ) {
+			EE::debug( 'Default self-signed cert already exists. Skipping generation.' );
+
+			return;
+		}
+		EE::debug( 'Generating default self-signed cert (default.key, default.crt) with CN=default using internal logic' );
+		$self_signed = new \EE\Site\Type\Site_Self_signed();
+		$self_signed->create_certificate( 'default' );
+		EE::debug( 'Self-signed cert generation completed.' );
+
 		set_nginx_proxy_version_conf();
 	}
 

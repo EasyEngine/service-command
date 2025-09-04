@@ -52,11 +52,11 @@ function nginx_proxy_check() {
 			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
 
-		$this->certs_dir = EE_ROOT_DIR . '/services/nginx-proxy/certs';
-		$this->key_path  = $this->certs_dir . '/default.key';
-		$this->crt_path  = $this->certs_dir . '/default.crt';
+		$certs_dir = EE_ROOT_DIR . '/services/nginx-proxy/certs';
+		$key_path  = $certs_dir . '/default.key';
+		$crt_path  = $certs_dir . '/default.crt';
 
-		if ( $this->fs->exists( $this->key_path ) && $this->fs->exists( $this->crt_path ) ) {
+		if ( $fs->exists( $key_path ) && $fs->exists( $crt_path ) ) {
 			EE::debug( 'Default self-signed cert already exists. Skipping generation.' );
 
 			return;

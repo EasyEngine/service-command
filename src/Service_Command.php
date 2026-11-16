@@ -81,7 +81,8 @@ class Service_Command extends EE_Command {
 				EE::Log( 'Notice: Service nginx_proxy already enabled.' );
 			}
 		} else {
-			$service_status = \EE\Service\Utils\init_global_container( $service );
+			// Recreate, not `docker start`: an upgrade leaves a stopped service on its old image for this to move.
+			$service_status = \EE\Service\Utils\init_global_container( $service, '', true );
 			if ( $service_status ) {
 				EE::success( sprintf( 'Service %s enabled.', $service ) );
 			} else {

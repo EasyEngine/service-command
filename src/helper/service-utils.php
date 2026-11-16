@@ -76,8 +76,9 @@ function nginx_proxy_check() {
  * Function to start global conainer if it is not running.
  *
  * @param string $container Global container to be brought up.
+ * @param bool   $recreate  `up -d` a stopped container too, which recreates it when the compose file changed (e.g. its image).
  */
-function init_global_container( $service, $container = '' ) {
+function init_global_container( $service, $container = '', $recreate = false ) {
 
 	if ( empty( $container ) ) {
 		$container = 'services_' . $service . '_1';
@@ -96,7 +97,14 @@ function init_global_container( $service, $container = '' ) {
 		if ( IS_DARWIN && GLOBAL_DB === $service && ! $fs->exists( $db_conf_file ) ) {
 			$fs->copy( SERVICE_TEMPLATE_ROOT . '/my.cnf.mustache', $db_conf_file );
 		}
-		\EE_DOCKER::boot_container( $container, \EE_DOCKER::docker_compose_with_custom() . ' up -d ' . $service );
+		$up = \EE_DOCKER::docker_compose_with_custom() . ' up -d ' . $service;
+		if ( $recreate ) {
+			if ( ! EE::exec( $up ) ) {
+				EE::error( "There was some error in starting $container. Please check logs." );
+			}
+		} else {
+			\EE_DOCKER::boot_container( $container, $up );
+		}
 		return true;
 	} else {
 		return false;

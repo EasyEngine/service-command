@@ -51,6 +51,7 @@ function nginx_proxy_check() {
 		if ( ! \EE_DOCKER::docker_compose_up( EE_SERVICE_DIR . '', [ 'global-nginx-proxy' ] ) ) {
 			EE::error( "There was some error in starting $proxy_type container. Please check logs." );
 		}
+		record_global_image_version( $proxy_type );
 
 		$certs_dir = EE_ROOT_DIR . '/services/nginx-proxy/certs';
 		$key_path  = $certs_dir . '/default.key';
@@ -105,9 +106,38 @@ function init_global_container( $service, $container = '', $recreate = false ) {
 		} else {
 			\EE_DOCKER::boot_container( $container, $up );
 		}
+		record_global_image_version( $container );
 		return true;
 	} else {
 		return false;
+	}
+}
+
+/**
+ * Records the tag a global service container runs in its image's `options` row, which the image migration reads.
+ * `up -d` can move a stopped service to the compose file's new tag, which the migration left unrecorded.
+ *
+ * @param string $container Global container name.
+ */
+function record_global_image_version( $container ) {
+
+	$image    = array_search( $container, EE\Migration\GlobalContainers::get_all_global_images_with_service_name(), true );
+	$recorded = false === $image ? false : Option::get( $image );
+	if ( false === $recorded ) {
+		return;
+	}
+
+	$launch  = EE::launch( sprintf( "docker inspect --format '{{.Config.Image}}' %s", escapeshellarg( $container ) ) );
+	$running = trim( $launch->stdout );
+	// A custom compose file may run another image: then there is nothing to record.
+	if ( 0 !== $launch->return_code || 0 !== strpos( $running, "$image:" ) ) {
+		return;
+	}
+
+	// A `tag@digest` reference records only the tag.
+	$tag = explode( '@', (string) substr( $running, strlen( $image ) + 1 ), 2 )[0];
+	if ( '' !== $tag && $recorded !== $tag ) {
+		Option::set( $image, $tag );
 	}
 }
 

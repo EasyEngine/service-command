@@ -115,6 +115,7 @@ class Service_Command extends EE_Command {
 		foreach ( $running_services as $service ) {
 			if ( ! empty( $service['state'] ) ) {
 				EE::exec( \EE_DOCKER::docker_compose_with_custom() . " up -d global-${service['name']}", true, true );
+				\EE\Service\Utils\record_global_image_version( 'services_global-' . $service['name'] . '_1' );
 			}
 		}
 

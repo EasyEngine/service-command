@@ -134,7 +134,8 @@ function record_global_image_version( $container ) {
 		return;
 	}
 
-	$tag = (string) substr( $running, strlen( $image ) + 1 );
+	// A `tag@digest` reference records only the tag.
+	$tag = explode( '@', (string) substr( $running, strlen( $image ) + 1 ), 2 )[0];
 	if ( '' !== $tag && $recorded !== $tag ) {
 		Option::set( $image, $tag );
 	}
